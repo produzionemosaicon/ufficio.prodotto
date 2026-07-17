@@ -38,6 +38,7 @@ const empty = {
   pagamento: 'RIBA 60 GG. FM',
   dataConsegna: '',
   note: '',
+  ordinatoDa: '',
 }
 
 export default function OrdineForm({ ordine, onClose }) {
@@ -65,6 +66,7 @@ export default function OrdineForm({ ordine, onClose }) {
     [form.numerata])
 
   async function handleSave() {
+    if (!form.ordinatoDa.trim()) { setError('Inserisci chi sta ordinando'); return }
     if (!form.fornitore.trim()) { setError('Inserisci il fornitore'); return }
     if (!form.articolo.trim())  { setError("Inserisci la descrizione dell'articolo"); return }
     if (form.tipoArticolo === 'Suola' && totalePaia === 0) {
@@ -76,7 +78,6 @@ export default function OrdineForm({ ordine, onClose }) {
     setError('')
     setSaving(true)
     try {
-      // Normalizza dati in base al tipo
       const dati = { ...form }
       if (form.tipoArticolo === 'Suola') {
         dati.quantita = totalePaia
@@ -109,12 +110,17 @@ export default function OrdineForm({ ordine, onClose }) {
         <div className="modal-body">
           {error && <div className="form-error">{error}</div>}
 
-          {/* STAGIONE + TIPO ATTIVITA */}
+          <div className="form-section-title">Operatore</div>
+          <div className="form-group" style={{ maxWidth: 300 }}>
+            <label>Ordinato da *</label>
+            <input value={form.ordinatoDa} onChange={e => set('ordinatoDa', e.target.value)} />
+          </div>
+
           <div className="form-section-title">Stagione e tipo attività</div>
           <div className="form-row col2">
             <div className="form-group">
               <label>Stagione *</label>
-              <input value={form.stagione} onChange={e => set('stagione', e.target.value)} placeholder="es. SS 2027" />
+              <input value={form.stagione} onChange={e => set('stagione', e.target.value)} />
             </div>
             <div className="form-group">
               <label>Tipo attività</label>
@@ -130,24 +136,22 @@ export default function OrdineForm({ ordine, onClose }) {
             </div>
           </div>
 
-          {/* FORNITORE */}
           <div className="form-section-title">Fornitore</div>
           <div className="form-row col2">
             <div className="form-group">
               <label>Nome fornitore *</label>
-              <input value={form.fornitore} onChange={e => set('fornitore', e.target.value)} placeholder="es. Suolificio Gloria Srl" />
+              <input value={form.fornitore} onChange={e => set('fornitore', e.target.value)} />
             </div>
             <div className="form-group">
               <label>Email</label>
-              <input type="email" value={form.fornitoreEmail} onChange={e => set('fornitoreEmail', e.target.value)} placeholder="ordini@fornitore.it" />
+              <input type="email" value={form.fornitoreEmail} onChange={e => set('fornitoreEmail', e.target.value)} />
             </div>
           </div>
           <div className="form-group">
             <label>Indirizzo</label>
-            <input value={form.fornitoreIndirizzo} onChange={e => set('fornitoreIndirizzo', e.target.value)} placeholder="Via, CAP, Città, Provincia" />
+            <input value={form.fornitoreIndirizzo} onChange={e => set('fornitoreIndirizzo', e.target.value)} />
           </div>
 
-          {/* TIPO ARTICOLO */}
           <div className="form-section-title">Tipo articolo</div>
           <div className="tipo-grid">
             {TIPI_ARTICOLO.map(({ key, icon: Icon, sub }) => (
@@ -161,30 +165,26 @@ export default function OrdineForm({ ordine, onClose }) {
             ))}
           </div>
 
-          {/* ARTICOLO */}
           <div className="form-section-title">Articolo — {form.tipoArticolo}</div>
           <div className="form-group">
             <label>Descrizione articolo *</label>
-            <input value={form.articolo} onChange={e => set('articolo', e.target.value)}
-              placeholder="es. SUOLA DVN-W13 PER ZEPPA CUOIO" />
+            <input value={form.articolo} onChange={e => set('articolo', e.target.value)} />
           </div>
           <div className="form-row col2">
             <div className="form-group">
               <label>Colore / Finitura</label>
-              <input value={form.colore} onChange={e => set('colore', e.target.value)} placeholder="es. BISCOTTO TAMPONATO 40974" />
+              <input value={form.colore} onChange={e => set('colore', e.target.value)} />
             </div>
             <div className="form-group">
               <label>Modello / Linea</label>
-              <input value={form.modello} onChange={e => set('modello', e.target.value)} placeholder="es. DVN ELEG. DONNA" />
+              <input value={form.modello} onChange={e => set('modello', e.target.value)} />
             </div>
           </div>
           <div className="form-group">
             <label>Note lavorazione</label>
-            <input value={form.lavorazione} onChange={e => set('lavorazione', e.target.value)}
-              placeholder="es. FRESA 45 + CANALINO + RIFINITO PIANTA" />
+            <input value={form.lavorazione} onChange={e => set('lavorazione', e.target.value)} />
           </div>
 
-          {/* QUANTITA — condizionale per tipo */}
           {form.tipoArticolo === 'Suola' ? (
             <>
               <div className="form-section-title">
@@ -216,7 +216,7 @@ export default function OrdineForm({ ordine, onClose }) {
                 <div className="form-group">
                   <label>Quantità *</label>
                   <input type="number" min="0" step="0.5" value={form.quantita}
-                    onChange={e => set('quantita', e.target.value)} placeholder="0" />
+                    onChange={e => set('quantita', e.target.value)} />
                 </div>
                 <div className="form-group">
                   <label>Unità di misura</label>
@@ -238,12 +238,11 @@ export default function OrdineForm({ ordine, onClose }) {
               <div className="form-group" style={{ maxWidth: 200 }}>
                 <label>Numero pezzi *</label>
                 <input type="number" min="0" value={form.quantita}
-                  onChange={e => set('quantita', e.target.value)} placeholder="0" />
+                  onChange={e => set('quantita', e.target.value)} />
               </div>
             </>
           )}
 
-          {/* SPEDIZIONE */}
           <div className="form-section-title">Spedizione e pagamento</div>
           <div className="form-row col2">
             <div className="form-group">
@@ -272,12 +271,10 @@ export default function OrdineForm({ ordine, onClose }) {
             </div>
           </div>
 
-          {/* NOTE */}
           <div className="form-section-title">Note aggiuntive</div>
           <div className="form-group">
             <label>Istruzioni speciali (compariranno in evidenza nel PDF)</label>
-            <textarea rows={2} value={form.note} onChange={e => set('note', e.target.value)}
-              placeholder="es. Chiedere campionatura colore prima di procedere" />
+            <textarea rows={2} value={form.note} onChange={e => set('note', e.target.value)} />
           </div>
         </div>
 
