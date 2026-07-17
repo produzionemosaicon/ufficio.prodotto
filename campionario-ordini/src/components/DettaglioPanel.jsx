@@ -91,7 +91,6 @@ export default function DettaglioPanel({ ordine, onClose, onEdit }) {
         {ordine.modello && <Field label="Modello" value={ordine.modello} />}
         <Field label="Stagione" value={`${ordine.stagione} · ${ordine.tipoAttivita || ''}`} />
 
-        {/* NUMERATA per suole */}
         {ordine.tipoArticolo === 'Suola' && taglieCompilate.length > 0 ? (
           <>
             <div className="panel-section-title">
@@ -108,6 +107,13 @@ export default function DettaglioPanel({ ordine, onClose, onEdit }) {
           </>
         ) : (
           <Field label="Quantità" value={`${ordine.quantita} ${ordine.unitaMisura || ''}`} mono />
+        )}
+
+        {ordine.ordinatoDa && (
+          <>
+            <div className="panel-section-title">Operatore</div>
+            <Field label="Ordinato da" value={ordine.ordinatoDa} />
+          </>
         )}
 
         <div className="panel-section-title">Spedizione</div>
