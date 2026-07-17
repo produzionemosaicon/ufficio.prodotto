@@ -3,12 +3,12 @@ import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
-  apiKey: "QUI_LA_TUA_API_KEY",
-  authDomain: "QUI_IL_TUO_PROJECT.firebaseapp.com",
-  projectId: "QUI_IL_TUO_PROJECT_ID",
-  storageBucket: "QUI_IL_TUO_PROJECT.appspot.com",
-  messagingSenderId: "QUI_IL_TUO_SENDER_ID",
-  appId: "QUI_IL_TUO_APP_ID"
+  apiKey: "AIzaSy...",
+  authDomain: "mosaicon-campionario.firebaseapp.com",
+  projectId: "mosaicon-campionario",
+  storageBucket: "mosaicon-campionario.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abc123"
 }
 
 const app = initializeApp(firebaseConfig)
