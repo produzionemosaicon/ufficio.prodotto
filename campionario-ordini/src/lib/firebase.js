@@ -1,21 +1,17 @@
-// ============================================================
-//  CONFIGURA FIREBASE
-//  Sostituisci i valori qui sotto con quelli del tuo progetto
-//  Firebase Console → Project Settings → Your apps → Config
-// ============================================================
-import { initializeApp } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "LA_TUA_API_KEY",
-  authDomain: "IL_TUO_PROJECT.firebaseapp.com",
-  projectId: "IL_TUO_PROJECT_ID",
-  storageBucket: "IL_TUO_PROJECT.appspot.com",
-  messagingSenderId: "IL_TUO_SENDER_ID",
-  appId: "IL_TUO_APP_ID"
-}
+  apiKey: "AIzaSyCv_jcxTUu3gU7RKJiq5R_CWwET6-UEfCY",
+  authDomain: "ufficio-prodotto.firebaseapp.com",
+  projectId: "ufficio-prodotto",
+  storageBucket: "ufficio-prodotto.firebasestorage.app",
+  messagingSenderId: "1028948785079",
+  appId: "1:1028948785079:web:3e74bd62bdbaa58aec5a32"
+};
 
-const app = initializeApp(firebaseConfig)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
