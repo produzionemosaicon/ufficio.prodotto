@@ -115,3 +115,5 @@ meta/ordineCounter
 - **"Missing or insufficient permissions"** → regole Firestore non pubblicate (passo 4)
 - **Pagina bianca** → config `firebase.js` incompleta (passo 3)
 - **Numero ordine non parte da 0001** → cancella il documento `meta/ordineCounter` da Firebase Console
+
+- 
