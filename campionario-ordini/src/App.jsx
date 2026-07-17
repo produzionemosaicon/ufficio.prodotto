@@ -58,7 +58,6 @@ export default function App() {
     return unsub
   }, [])
 
-  // Counts per sidebar
   const counts = useMemo(() => {
     const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Pellame: 0, Accessorio: 0 }
     ordini.forEach(o => {
@@ -84,7 +83,6 @@ export default function App() {
         o.numeroOrdine?.toLowerCase().includes(q)
       )
     }
-    // Sort
     list.sort((a, b) => {
       let av = a[sortCol], bv = b[sortCol]
       if (av?.toDate) av = av.toDate()
@@ -112,7 +110,6 @@ export default function App() {
   return (
     <div className="app-shell">
 
-      {/* HEADER */}
       <header className="header">
         <div className="logo">
           <div className="logo-icon">
@@ -123,13 +120,9 @@ export default function App() {
             <div className="logo-sub">Mosaicon Group</div>
           </div>
         </div>
-        <div className="header-right">
-          <span className="season-badge">SS 27</span>
-          <div className="avatar">MG</div>
-        </div>
+        <div className="header-right"></div>
       </header>
 
-      {/* SIDEBAR */}
       <aside className="sidebar">
         <div className="nav-section-label">Stato</div>
         {Object.entries(STATO_LABELS).map(([k, { label, icon: Icon }]) => (
@@ -167,9 +160,7 @@ export default function App() {
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className={`main ${selected ? 'with-panel' : ''}`}>
-        {/* TOOLBAR */}
         <div className="toolbar">
           <div className="page-title">
             {STATO_LABELS[filtroStato]?.label}
@@ -188,7 +179,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* STAT CARDS */}
         <div className="stats-row">
           {[
             { k: 'all',        label: 'Totale',     cls: ''        },
@@ -204,7 +194,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* TABLE */}
         <div className="table-wrap">
           {filtered.length === 0 ? (
             <div className="empty-state">
@@ -268,7 +257,6 @@ export default function App() {
         </div>
       </main>
 
-      {/* DETAIL PANEL */}
       {selected && (
         <DettaglioPanel
           ordine={ordini.find(o => o.id === selected.id) || selected}
@@ -277,7 +265,6 @@ export default function App() {
         />
       )}
 
-      {/* FORM MODAL */}
       {showForm && (
         <OrdineForm
           ordine={editOrdine}
