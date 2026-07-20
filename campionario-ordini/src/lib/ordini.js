@@ -6,9 +6,7 @@ import { db } from './firebase'
 
 const COLL = 'ordini'
 
-// Genera numero ordine progressivo: ORD-YYYY-NNNN
 export async function nextNumeroOrdine() {
-  const year = new Date().getFullYear()
   const counterRef = doc(db, 'meta', 'ordineCounter')
   const snap = await getDoc(counterRef)
 
@@ -24,10 +22,9 @@ export async function nextNumeroOrdine() {
     await setDoc(counterRef, { lastN: nextN })
   }
 
-  return `ORD-${year}-${String(nextN).padStart(4, '0')}`
+  return `00/${String(nextN).padStart(3, '0')}`
 }
 
-// Subscribe all orders, real-time
 export function subscribeOrdini(callback) {
   const q = query(collection(db, COLL), orderBy('createdAt', 'desc'))
   return onSnapshot(q, snap => {
@@ -36,7 +33,6 @@ export function subscribeOrdini(callback) {
   })
 }
 
-// Create
 export async function creaOrdine(dati) {
   const numero = await nextNumeroOrdine()
   return addDoc(collection(db, COLL), {
@@ -48,7 +44,6 @@ export async function creaOrdine(dati) {
   })
 }
 
-// Update fields
 export async function aggiornaOrdine(id, dati) {
   return updateDoc(doc(db, COLL, id), {
     ...dati,
@@ -56,7 +51,6 @@ export async function aggiornaOrdine(id, dati) {
   })
 }
 
-// Advance status
 export async function avanzaStato(id, statoCorrente) {
   const flow = ['da_inviare', 'inviato', 'ricevuto']
   const idx = flow.indexOf(statoCorrente)
@@ -65,7 +59,6 @@ export async function avanzaStato(id, statoCorrente) {
   }
 }
 
-// Delete
 export async function eliminaOrdine(id) {
   return deleteDoc(doc(db, COLL, id))
 }
