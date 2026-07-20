@@ -39,9 +39,7 @@ export default function DettaglioPanel({ ordine, onClose, onEdit }) {
 
   const statoIdx = FLOW.indexOf(ordine.stato)
   const nextLabel = NEXT_LABEL[ordine.stato]
-  const taglieCompilate = ordine.numerata
-    ? TAGLIE.filter(t => ordine.numerata[t])
-    : []
+  const righe = ordine.righe || []
 
   async function handleAvanza() {
     setLoading(true)
@@ -60,10 +58,11 @@ export default function DettaglioPanel({ ordine, onClose, onEdit }) {
       <div className="panel-header">
         <div>
           <div className="panel-order-id">{ordine.numeroOrdine}</div>
-          <div className="panel-title">{ordine.articolo}</div>
-          <div style={{ marginTop: 6, display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div className="panel-title">{ordine.fornitore}</div>
+          <div style={{ marginTop: 6, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             <StatusPill stato={ordine.stato} />
             <span className="attivita-tag">{ordine.tipoAttivita || 'Campionario'}</span>
+            {ordine.brand && <span className="attivita-tag">{ordine.brand}</span>}
           </div>
         </div>
         <button className="icon-btn" onClick={onClose}><X size={14} /></button>
@@ -82,32 +81,39 @@ export default function DettaglioPanel({ ordine, onClose, onEdit }) {
         <div className="panel-section-title">Fornitore</div>
         <Field label="Nome" value={ordine.fornitore} />
         {ordine.fornitoreIndirizzo && <Field label="Indirizzo" value={ordine.fornitoreIndirizzo} />}
-        {ordine.fornitoreEmail && <Field label="Email" value={ordine.fornitoreEmail} />}
-
-        <div className="panel-section-title">Articolo — {ordine.tipoArticolo}</div>
-        <Field label="Descrizione" value={ordine.articolo} />
-        {ordine.colore && <Field label="Colore" value={ordine.colore} />}
-        {ordine.lavorazione && <Field label="Lavorazione" value={ordine.lavorazione} />}
-        {ordine.modello && <Field label="Modello" value={ordine.modello} />}
         <Field label="Stagione" value={`${ordine.stagione} · ${ordine.tipoAttivita || ''}`} />
+        {ordine.brand && <Field label="Brand" value={ordine.brand} />}
 
-        {ordine.tipoArticolo === 'Suola' && taglieCompilate.length > 0 ? (
-          <>
-            <div className="panel-section-title">
-              Numerata — Totale {ordine.quantita} PA
+        {righe.map((r, i) => {
+          const taglieCompilate = r.numerata ? TAGLIE.filter(t => r.numerata[t]) : []
+          return (
+            <div key={i}>
+              <div className="panel-section-title">Riga {i + 1} — {r.tipoArticolo}</div>
+              <Field label="Articolo" value={r.articolo} />
+              {r.colore && <Field label="Colore" value={r.colore} />}
+              {r.lavorazione && <Field label="Lavorazione" value={r.lavorazione} />}
+              {r.modello && <Field label="Modello" value={r.modello} />}
+
+              {r.tipoArticolo === 'Suola' && taglieCompilate.length > 0 ? (
+                <>
+                  <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, margin: '6px 0 4px' }}>
+                    Numerata — Totale {r.quantita} PA
+                  </div>
+                  <div className="numerata-view">
+                    {taglieCompilate.map(t => (
+                      <div key={t} className="numerata-chip">
+                        <span className="nc-taglia">{TAGLIE_DISPLAY[t] || t}</span>
+                        <span className="nc-qty">{r.numerata[t]}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <Field label="Quantità" value={`${r.quantita} ${r.unitaMisura || ''}`} mono />
+              )}
             </div>
-            <div className="numerata-view">
-              {taglieCompilate.map(t => (
-                <div key={t} className="numerata-chip">
-                  <span className="nc-taglia">{TAGLIE_DISPLAY[t] || t}</span>
-                  <span className="nc-qty">{ordine.numerata[t]}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <Field label="Quantità" value={`${ordine.quantita} ${ordine.unitaMisura || ''}`} mono />
-        )}
+          )
+        })}
 
         {ordine.ordinatoDa && (
           <>
