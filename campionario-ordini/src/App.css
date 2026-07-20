@@ -150,6 +150,7 @@
 .btn-danger-sm {
   padding: 4px 10px; font-size: 11px; font-weight: 600;
   background: var(--danger); color: white; border: none; border-radius: 5px;
+  display: flex; align-items: center; gap: 4px;
 }
 .btn-secondary-sm {
   padding: 4px 10px; font-size: 11px;
@@ -203,7 +204,6 @@ thead th {
 }
 thead th.sortable { cursor: pointer; user-select: none; }
 thead th.sortable:hover { color: var(--accent); }
-thead th { display: table-cell; }
 thead th svg { display: inline; vertical-align: middle; margin-left: 3px; }
 tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; }
 tbody tr:last-child { border-bottom: none; }
@@ -235,6 +235,7 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
 }
 .type-tag.mat  { background: #EDE9FF; color: #5B3FBF; }
 .type-tag.comp { background: #FFF0E0; color: #9A5C00; }
+.type-tag.acc  { background: #E0F2F1; color: #00695C; }
 
 /* ── EMPTY STATE ─────────────────────────────────────────── */
 .empty-state {
@@ -320,6 +321,7 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
   display: flex; flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,0.18);
 }
+.modal-lg { width: 680px; }
 .modal-header {
   padding: 20px 24px; border-bottom: 1px solid var(--border);
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -341,6 +343,8 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
 .form-section-title:first-child { margin-top: 0; }
 .form-row { display: flex; gap: 12px; margin-bottom: 2px; }
 .form-row.col2 > .form-group { flex: 1; }
+.form-row.col3 > .form-group { flex: 1; }
+.form-row.col3 { display: flex; gap: 12px; margin-bottom: 2px; }
 .form-group {
   display: flex; flex-direction: column; gap: 5px;
   margin-bottom: 14px; flex: 1;
@@ -369,9 +373,6 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
   border-radius: 6px; padding: 10px 12px;
   font-size: 12px; color: var(--danger); margin-bottom: 16px;
 }
-
-/* ── MODAL LARGE ─────────────────────────────────────────── */
-.modal-lg { width: 680px; }
 
 /* ── RADIO PILLS ─────────────────────────────────────────── */
 .radio-pills { display: flex; gap: 6px; }
@@ -459,5 +460,30 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
   padding: 2px 7px; border-radius: 3px;
 }
 
-/* ── TYPE TAG accessorio ─────────────────────────────────── */
-.type-tag.acc { background: #E0F2F1; color: #00695C; }
+/* ── RIGA EDITOR ─────────────────────────────────────────── */
+.riga-editor {
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; margin-bottom: 12px;
+  background: var(--bg);
+}
+.riga-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.riga-num {
+  font-size: 11px; font-weight: 600; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.form-section-sub {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 8px; margin-top: 12px;
+}
+.btn-add-riga {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 10px;
+  border: 1px dashed var(--accent); border-radius: 8px;
+  background: var(--accent-light); color: var(--accent);
+  font-size: 12px; font-weight: 500; margin-bottom: 16px;
+}
+.btn-add-riga:hover { background: #D5ECEA; }
