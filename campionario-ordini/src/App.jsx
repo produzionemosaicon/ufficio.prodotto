@@ -46,6 +46,7 @@ export default function App() {
   const [ordini, setOrdini] = useState([])
   const [filtroStato, setFiltroStato] = useState('all')
   const [filtroTipo, setFiltroTipo]   = useState('all')
+  const [filtroBrand, setFiltroBrand] = useState('all')
   const [search, setSearch]           = useState('')
   const [selected, setSelected]       = useState(null)
   const [showForm, setShowForm]       = useState(false)
@@ -67,6 +68,12 @@ export default function App() {
     return c
   }, [ordini])
 
+  const brands = useMemo(() => {
+    const set = new Set()
+    ordini.forEach(o => { if (o.brand) set.add(o.brand) })
+    return Array.from(set).sort()
+  }, [ordini])
+
   const scaduti = useMemo(() =>
     ordini.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)).length, [ordini])
 
@@ -74,6 +81,7 @@ export default function App() {
     let list = [...ordini]
     if (filtroStato !== 'all') list = list.filter(o => o.stato === filtroStato)
     if (filtroTipo  !== 'all') list = list.filter(o => o.tipoArticolo === filtroTipo)
+    if (filtroBrand !== 'all') list = list.filter(o => o.brand === filtroBrand)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(o =>
@@ -92,7 +100,7 @@ export default function App() {
       return 0
     })
     return list
-  }, [ordini, filtroStato, filtroTipo, search, sortCol, sortDir])
+  }, [ordini, filtroStato, filtroTipo, filtroBrand, search, sortCol, sortDir])
 
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -147,6 +155,27 @@ export default function App() {
         ))}
 
         <div className="nav-divider" />
+
+        {brands.length > 0 && (
+          <>
+            <div className="nav-section-label">Brand</div>
+            <button className={`nav-item ${filtroBrand === 'all' ? 'active' : ''}`}
+              onClick={() => setFiltroBrand('all')}>
+              <Package size={14} />
+              Tutti i brand
+            </button>
+            {brands.map(b => (
+              <button key={b} className={`nav-item ${filtroBrand === b ? 'active' : ''}`}
+                onClick={() => setFiltroBrand(b)}>
+                <Package size={14} />
+                {b}
+                <span className="nav-count">{ordini.filter(o => o.brand === b).length}</span>
+              </button>
+            ))}
+            <div className="nav-divider" />
+          </>
+        )}
+
         <div className="sidebar-stats">
           <div className="nav-section-label" style={{ padding: '0 0 8px' }}>Riepilogo</div>
           <div className="stat-row">
