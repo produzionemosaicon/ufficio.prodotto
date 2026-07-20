@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { X, Save, Footprints, Layers, Puzzle } from 'lucide-react'
+import { X, Save, Footprints, Layers, Puzzle, Plus, Trash2 } from 'lucide-react'
 import { creaOrdine, aggiornaOrdine } from '../lib/ordini'
 import { TAGLIE } from '../lib/generatePdf'
 
@@ -17,75 +17,204 @@ const TIPI_ARTICOLO = [
 const SPEDIZIONI = ['CAMION - BY TRUCK', 'CORRIERE GLS', 'CORRIERE DHL', 'CORRIERE BRT', 'FRANCO FABBRICA', 'RITIRO NOSTRO MEZZO']
 const TERMINI    = ['PORTO FRANCO', 'PORTO ASSEGNATO', 'EX WORKS']
 const PAGAMENTI  = ['RIBA 60 GG. FM', 'RIBA 30 GG. FM', 'BONIFICO 30 GG', 'BONIFICO 60 GG', 'BONIFICO VISTA FATTURA']
+const BRANDS     = ['', 'MOMONI', 'CHANEL', 'HERMÈS', 'MIUMIU', 'DRIES VAN NOTEN', 'PROENZA', 'CHROME HEARTS', 'PIERRE HARDY', 'ALTRO']
 
-const empty = {
-  stagione: 'SS 2027',
-  tipoAttivita: 'Campionario',
-  fornitore: '',
-  fornitoreIndirizzo: '',
-  fornitoreEmail: '',
+const emptyRiga = {
   tipoArticolo: 'Suola',
   articolo: '',
   colore: '',
   lavorazione: '',
   modello: '',
-  brand: '',
   numerata: {},
   quantita: '',
   unitaMisura: 'MQ',
+}
+
+const emptyOrder = {
+  stagione: 'SS 2027',
+  tipoAttivita: 'Campionario',
+  fornitore: '',
+  fornitoreIndirizzo: '',
+  brand: '',
   spedizione: 'CAMION - BY TRUCK',
   termini: 'PORTO FRANCO',
   pagamento: 'RIBA 60 GG. FM',
   dataConsegna: '',
   note: '',
   ordinatoDa: '',
+  righe: [{ ...emptyRiga }],
+}
+
+function RigaEditor({ riga, index, total, onChange, onRemove }) {
+  function set(k, v) { onChange(index, { ...riga, [k]: v }) }
+  function setTaglia(t, v) {
+    onChange(index, { ...riga, numerata: { ...riga.numerata, [t]: v.replace(/\D/g, '') } })
+  }
+
+  const totalePaia = useMemo(() =>
+    Object.values(riga.numerata || {}).reduce((s, v) => s + (Number(v) || 0), 0),
+    [riga.numerata])
+
+  return (
+    <div className="riga-editor">
+      <div className="riga-header">
+        <span className="riga-num">Riga {index + 1}</span>
+        {total > 1 && (
+          <button type="button" className="btn-danger-sm" onClick={() => onRemove(index)}>
+            <Trash2 size={11} /> Rimuovi
+          </button>
+        )}
+      </div>
+
+      <div className="tipo-grid">
+        {TIPI_ARTICOLO.map(({ key, icon: Icon, sub }) => (
+          <button key={key} type="button"
+            className={`tipo-btn ${riga.tipoArticolo === key ? 'active' : ''}`}
+            onClick={() => set('tipoArticolo', key)}>
+            <Icon size={18} />
+            <span>{key}</span>
+            <small>{sub}</small>
+          </button>
+        ))}
+      </div>
+
+      <div className="form-group">
+        <label>Descrizione articolo *</label>
+        <input value={riga.articolo} onChange={e => set('articolo', e.target.value)} />
+      </div>
+      <div className="form-row col2">
+        <div className="form-group">
+          <label>Colore / Finitura</label>
+          <input value={riga.colore} onChange={e => set('colore', e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>Modello / Linea</label>
+          <input value={riga.modello} onChange={e => set('modello', e.target.value)} />
+        </div>
+      </div>
+      <div className="form-group">
+        <label>Note lavorazione</label>
+        <input value={riga.lavorazione} onChange={e => set('lavorazione', e.target.value)} />
+      </div>
+
+      {riga.tipoArticolo === 'Suola' ? (
+        <>
+          <div className="form-section-sub">
+            Numerata — paia per taglia
+            <span className="totale-badge">Totale: {totalePaia} PA</span>
+          </div>
+          <div className="numerata-scroll">
+            <div className="numerata-strip">
+              {TAGLIE.map(t => (
+                <div key={t} className="taglia-cell">
+                  <div className={`taglia-label ${t.includes('.') ? 'half' : ''}`}>
+                    {TAGLIE_DISPLAY[t] || t}
+                  </div>
+                  <input
+                    className={`taglia-input ${(riga.numerata || {})[t] ? 'has-val' : ''}`}
+                    value={(riga.numerata || {})[t] || ''}
+                    onChange={e => setTaglia(t, e.target.value)}
+                    inputMode="numeric"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : riga.tipoArticolo === 'Pellame' ? (
+        <div className="form-row col2">
+          <div className="form-group">
+            <label>Quantità *</label>
+            <input type="number" min="0" step="0.5" value={riga.quantita}
+              onChange={e => set('quantita', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Unità di misura</label>
+            <div className="radio-pills">
+              {['MQ', 'ML'].map(u => (
+                <button key={u} type="button"
+                  className={`radio-pill ${riga.unitaMisura === u ? 'active' : ''}`}
+                  onClick={() => set('unitaMisura', u)}>
+                  {u}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="form-group" style={{ maxWidth: 200 }}>
+          <label>Numero pezzi *</label>
+          <input type="number" min="0" value={riga.quantita}
+            onChange={e => set('quantita', e.target.value)} />
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function OrdineForm({ ordine, onClose }) {
   const isEdit = !!ordine?.id
   const [form, setForm] = useState(isEdit ? {
-    ...empty,
+    ...emptyOrder,
     ...ordine,
-    numerata: ordine.numerata || {},
+    righe: ordine.righe || [{ ...emptyRiga }],
     dataConsegna: ordine.dataConsegna
       ? (ordine.dataConsegna?.toDate
           ? ordine.dataConsegna.toDate().toISOString().split('T')[0]
           : ordine.dataConsegna)
       : '',
-  } : empty)
+  } : emptyOrder)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
-  function setTaglia(t, v) {
-    setForm(f => ({ ...f, numerata: { ...f.numerata, [t]: v.replace(/\D/g, '') } }))
-  }
 
-  const totalePaia = useMemo(() =>
-    Object.values(form.numerata).reduce((s, v) => s + (Number(v) || 0), 0),
-    [form.numerata])
+  function updateRiga(idx, riga) {
+    setForm(f => ({ ...f, righe: f.righe.map((r, i) => i === idx ? riga : r) }))
+  }
+  function addRiga() {
+    setForm(f => ({ ...f, righe: [...f.righe, { ...emptyRiga }] }))
+  }
+  function removeRiga(idx) {
+    setForm(f => ({ ...f, righe: f.righe.filter((_, i) => i !== idx) }))
+  }
 
   async function handleSave() {
     if (!form.ordinatoDa.trim()) { setError('Inserisci chi sta ordinando'); return }
     if (!form.fornitore.trim()) { setError('Inserisci il fornitore'); return }
-    if (!form.articolo.trim())  { setError("Inserisci la descrizione dell'articolo"); return }
-    if (form.tipoArticolo === 'Suola' && totalePaia === 0) {
-      setError('Inserisci almeno una quantità nella numerata'); return
+
+    for (let i = 0; i < form.righe.length; i++) {
+      const r = form.righe[i]
+      if (!r.articolo.trim()) { setError(`Riga ${i+1}: inserisci la descrizione articolo`); return }
+      if (r.tipoArticolo === 'Suola') {
+        const tot = Object.values(r.numerata || {}).reduce((s, v) => s + (Number(v) || 0), 0)
+        if (tot === 0) { setError(`Riga ${i+1}: inserisci almeno una quantità nella numerata`); return }
+      } else if (!r.quantita) {
+        setError(`Riga ${i+1}: inserisci la quantità`); return
+      }
     }
-    if (form.tipoArticolo !== 'Suola' && !form.quantita) {
-      setError('Inserisci la quantità'); return
-    }
+
     setError('')
     setSaving(true)
     try {
-      const dati = { ...form }
-      if (form.tipoArticolo === 'Suola') {
-        dati.quantita = totalePaia
-        dati.unitaMisura = 'PA'
-      } else {
-        dati.numerata = {}
-        if (form.tipoArticolo === 'Accessorio') dati.unitaMisura = 'PZ'
-      }
+      const righe = form.righe.map(r => {
+        const nr = { ...r }
+        if (r.tipoArticolo === 'Suola') {
+          nr.quantita = Object.values(r.numerata || {}).reduce((s, v) => s + (Number(v) || 0), 0)
+          nr.unitaMisura = 'PA'
+        } else {
+          nr.numerata = {}
+          if (r.tipoArticolo === 'Accessorio') nr.unitaMisura = 'PZ'
+        }
+        return nr
+      })
+
+      const dati = { ...form, righe }
+      dati.quantita = righe.reduce((s, r) => s + (Number(r.quantita) || 0), 0)
+      dati.unitaMisura = righe.length === 1 ? righe[0].unitaMisura : 'MIX'
+      dati.tipoArticolo = righe.length === 1 ? righe[0].tipoArticolo : 'Misto'
+      dati.articolo = righe.length === 1 ? righe[0].articolo : righe.map(r => r.articolo).join(' + ')
+
       if (isEdit) await aggiornaOrdine(ordine.id, dati)
       else        await creaOrdine(dati)
       onClose()
@@ -117,10 +246,16 @@ export default function OrdineForm({ ordine, onClose }) {
           </div>
 
           <div className="form-section-title">Stagione e tipo attività</div>
-          <div className="form-row col2">
+          <div className="form-row col3">
             <div className="form-group">
               <label>Stagione *</label>
               <input value={form.stagione} onChange={e => set('stagione', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Brand / Cliente</label>
+              <select value={form.brand} onChange={e => set('brand', e.target.value)}>
+                {BRANDS.map(b => <option key={b} value={b}>{b || '— seleziona —'}</option>)}
+              </select>
             </div>
             <div className="form-group">
               <label>Tipo attività</label>
@@ -143,105 +278,30 @@ export default function OrdineForm({ ordine, onClose }) {
               <input value={form.fornitore} onChange={e => set('fornitore', e.target.value)} />
             </div>
             <div className="form-group">
-              <label>Email</label>
-              <input type="email" value={form.fornitoreEmail} onChange={e => set('fornitoreEmail', e.target.value)} />
+              <label>Indirizzo</label>
+              <input value={form.fornitoreIndirizzo} onChange={e => set('fornitoreIndirizzo', e.target.value)} />
             </div>
           </div>
-          <div className="form-group">
-            <label>Indirizzo</label>
-            <input value={form.fornitoreIndirizzo} onChange={e => set('fornitoreIndirizzo', e.target.value)} />
+
+          <div className="form-section-title">
+            Righe ordine
+            <span className="totale-badge">{form.righe.length} {form.righe.length === 1 ? 'riga' : 'righe'}</span>
           </div>
 
-          <div className="form-section-title">Tipo articolo</div>
-          <div className="tipo-grid">
-            {TIPI_ARTICOLO.map(({ key, icon: Icon, sub }) => (
-              <button key={key} type="button"
-                className={`tipo-btn ${form.tipoArticolo === key ? 'active' : ''}`}
-                onClick={() => set('tipoArticolo', key)}>
-                <Icon size={20} />
-                <span>{key}</span>
-                <small>{sub}</small>
-              </button>
-            ))}
-          </div>
+          {form.righe.map((r, i) => (
+            <RigaEditor
+              key={i}
+              riga={r}
+              index={i}
+              total={form.righe.length}
+              onChange={updateRiga}
+              onRemove={removeRiga}
+            />
+          ))}
 
-          <div className="form-section-title">Articolo — {form.tipoArticolo}</div>
-          <div className="form-group">
-            <label>Descrizione articolo *</label>
-            <input value={form.articolo} onChange={e => set('articolo', e.target.value)} />
-          </div>
-          <div className="form-row col2">
-            <div className="form-group">
-              <label>Colore / Finitura</label>
-              <input value={form.colore} onChange={e => set('colore', e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Modello / Linea</label>
-              <input value={form.modello} onChange={e => set('modello', e.target.value)} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Note lavorazione</label>
-            <input value={form.lavorazione} onChange={e => set('lavorazione', e.target.value)} />
-          </div>
-
-          {form.tipoArticolo === 'Suola' ? (
-            <>
-              <div className="form-section-title">
-                Numerata — quantità per taglia (paia)
-                <span className="totale-badge">Totale: {totalePaia} PA</span>
-              </div>
-              <div className="numerata-scroll">
-                <div className="numerata-strip">
-                  {TAGLIE.map(t => (
-                    <div key={t} className="taglia-cell">
-                      <div className={`taglia-label ${t.includes('.') ? 'half' : ''}`}>
-                        {TAGLIE_DISPLAY[t] || t}
-                      </div>
-                      <input
-                        className={`taglia-input ${form.numerata[t] ? 'has-val' : ''}`}
-                        value={form.numerata[t] || ''}
-                        onChange={e => setTaglia(t, e.target.value)}
-                        inputMode="numeric"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : form.tipoArticolo === 'Pellame' ? (
-            <>
-              <div className="form-section-title">Quantità pellame</div>
-              <div className="form-row col2">
-                <div className="form-group">
-                  <label>Quantità *</label>
-                  <input type="number" min="0" step="0.5" value={form.quantita}
-                    onChange={e => set('quantita', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Unità di misura</label>
-                  <div className="radio-pills">
-                    {['MQ', 'ML'].map(u => (
-                      <button key={u} type="button"
-                        className={`radio-pill ${form.unitaMisura === u ? 'active' : ''}`}
-                        onClick={() => set('unitaMisura', u)}>
-                        {u}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="form-section-title">Quantità accessorio</div>
-              <div className="form-group" style={{ maxWidth: 200 }}>
-                <label>Numero pezzi *</label>
-                <input type="number" min="0" value={form.quantita}
-                  onChange={e => set('quantita', e.target.value)} />
-              </div>
-            </>
-          )}
+          <button type="button" className="btn-add-riga" onClick={addRiga}>
+            <Plus size={13} /> Aggiungi riga
+          </button>
 
           <div className="form-section-title">Spedizione e pagamento</div>
           <div className="form-row col2">
