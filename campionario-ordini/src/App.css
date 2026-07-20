@@ -487,3 +487,18 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
   font-size: 12px; font-weight: 500; margin-bottom: 16px;
 }
 .btn-add-riga:hover { background: #D5ECEA; }
+/* ── FILTER ROW ──────────────────────────────────────────── */
+.filter-row {
+  display: flex; gap: 8px; margin-bottom: 16px; align-items: center;
+  flex-wrap: wrap;
+}
+.filter-select {
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 10px; font-size: 12px;
+  background: var(--surface); color: var(--text-secondary);
+  outline: none; cursor: pointer;
+}
+.filter-select:focus { border-color: var(--accent); }
+
+/* tipo-grid con 4 tipi */
+.tipo-grid { grid-template-columns: repeat(4, 1fr); }
