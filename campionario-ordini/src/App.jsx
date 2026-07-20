@@ -18,6 +18,7 @@ const STATO_LABELS = {
 const TIPO_LABELS = {
   all:          { label: 'Tutti i tipi', icon: Layers },
   Suola:        { label: 'Suole',        icon: Package },
+  Tacco:        { label: 'Tacchi',       icon: Package },
   Pellame:      { label: 'Pellami',      icon: Layers },
   Accessorio:   { label: 'Accessori',    icon: Package },
 }
@@ -47,6 +48,8 @@ export default function App() {
   const [filtroStato, setFiltroStato] = useState('all')
   const [filtroTipo, setFiltroTipo]   = useState('all')
   const [filtroBrand, setFiltroBrand] = useState('all')
+  const [filtroFornitore, setFiltroFornitore] = useState('all')
+  const [filtroOperatore, setFiltroOperatore] = useState('all')
   const [search, setSearch]           = useState('')
   const [selected, setSelected]       = useState(null)
   const [showForm, setShowForm]       = useState(false)
@@ -60,7 +63,7 @@ export default function App() {
   }, [])
 
   const counts = useMemo(() => {
-    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Pellame: 0, Accessorio: 0 }
+    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Tacco: 0, Pellame: 0, Accessorio: 0 }
     ordini.forEach(o => {
       if (c[o.stato] !== undefined) c[o.stato]++
       if (c[o.tipoArticolo] !== undefined) c[o.tipoArticolo]++
@@ -74,6 +77,18 @@ export default function App() {
     return Array.from(set).sort()
   }, [ordini])
 
+  const fornitori = useMemo(() => {
+    const set = new Set()
+    ordini.forEach(o => { if (o.fornitore) set.add(o.fornitore) })
+    return Array.from(set).sort()
+  }, [ordini])
+
+  const operatori = useMemo(() => {
+    const set = new Set()
+    ordini.forEach(o => { if (o.ordinatoDa) set.add(o.ordinatoDa) })
+    return Array.from(set).sort()
+  }, [ordini])
+
   const scaduti = useMemo(() =>
     ordini.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)).length, [ordini])
 
@@ -82,6 +97,8 @@ export default function App() {
     if (filtroStato !== 'all') list = list.filter(o => o.stato === filtroStato)
     if (filtroTipo  !== 'all') list = list.filter(o => o.tipoArticolo === filtroTipo)
     if (filtroBrand !== 'all') list = list.filter(o => o.brand === filtroBrand)
+    if (filtroFornitore !== 'all') list = list.filter(o => o.fornitore === filtroFornitore)
+    if (filtroOperatore !== 'all') list = list.filter(o => o.ordinatoDa === filtroOperatore)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(o =>
@@ -100,7 +117,7 @@ export default function App() {
       return 0
     })
     return list
-  }, [ordini, filtroStato, filtroTipo, filtroBrand, search, sortCol, sortDir])
+  }, [ordini, filtroStato, filtroTipo, filtroBrand, filtroFornitore, filtroOperatore, search, sortCol, sortDir])
 
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -206,6 +223,26 @@ export default function App() {
           <button className="btn-primary" onClick={() => { setEditOrdine(null); setShowForm(true) }}>
             <Plus size={13} /> Nuovo ordine
           </button>
+        </div>
+
+        <div className="filter-row">
+          <select className="filter-select" value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}>
+            <option value="all">Fornitore: tutti</option>
+            {fornitori.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+          <select className="filter-select" value={filtroBrand} onChange={e => setFiltroBrand(e.target.value)}>
+            <option value="all">Cliente/Brand: tutti</option>
+            {brands.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <select className="filter-select" value={filtroOperatore} onChange={e => setFiltroOperatore(e.target.value)}>
+            <option value="all">Ordinato da: tutti</option>
+            {operatori.map(op => <option key={op} value={op}>{op}</option>)}
+          </select>
+          {(filtroFornitore !== 'all' || filtroBrand !== 'all' || filtroOperatore !== 'all') && (
+            <button className="btn-secondary" onClick={() => { setFiltroFornitore('all'); setFiltroBrand('all'); setFiltroOperatore('all') }}>
+              Azzera filtri
+            </button>
+          )}
         </div>
 
         <div className="stats-row">
