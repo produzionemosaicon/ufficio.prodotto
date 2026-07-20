@@ -80,7 +80,6 @@ export default function DettaglioPanel({ ordine, onClose, onEdit }) {
 
         <div className="panel-section-title">Fornitore</div>
         <Field label="Nome" value={ordine.fornitore} />
-        {ordine.fornitoreIndirizzo && <Field label="Indirizzo" value={ordine.fornitoreIndirizzo} />}
         <Field label="Stagione" value={`${ordine.stagione} · ${ordine.tipoAttivita || ''}`} />
         {ordine.brand && <Field label="Brand" value={ordine.brand} />}
 
@@ -94,7 +93,7 @@ export default function DettaglioPanel({ ordine, onClose, onEdit }) {
               {r.lavorazione && <Field label="Lavorazione" value={r.lavorazione} />}
               {r.modello && <Field label="Modello" value={r.modello} />}
 
-              {r.tipoArticolo === 'Suola' && taglieCompilate.length > 0 ? (
+              {(r.tipoArticolo === 'Suola' || r.tipoArticolo === 'Tacco') && taglieCompilate.length > 0 ? (
                 <>
                   <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, margin: '6px 0 4px' }}>
                     Numerata — Totale {r.quantita} PA
