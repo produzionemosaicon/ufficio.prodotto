@@ -10,6 +10,7 @@ const TAGLIE_DISPLAY = {
 
 const TIPI_ARTICOLO = [
   { key: 'Suola',      icon: Footprints, sub: 'Numerata 34 → 46' },
+  { key: 'Tacco',      icon: Footprints, sub: 'Tacco + Sottotacco' },
   { key: 'Pellame',    icon: Layers,     sub: 'MQ o ML' },
   { key: 'Accessorio', icon: Puzzle,     sub: 'N° pezzi' },
 ]
@@ -17,7 +18,7 @@ const TIPI_ARTICOLO = [
 const SPEDIZIONI = ['CAMION - BY TRUCK', 'CORRIERE GLS', 'CORRIERE DHL', 'CORRIERE BRT', 'FRANCO FABBRICA', 'RITIRO NOSTRO MEZZO']
 const TERMINI    = ['PORTO FRANCO', 'PORTO ASSEGNATO', 'EX WORKS']
 const PAGAMENTI  = ['RIBA 60 GG. FM', 'RIBA 30 GG. FM', 'BONIFICO 30 GG', 'BONIFICO 60 GG', 'BONIFICO VISTA FATTURA']
-const BRANDS     = ['', 'MOMONI', 'CHANEL', 'HERMÈS', 'MIUMIU', 'DRIES VAN NOTEN', 'PROENZA', 'CHROME HEARTS', 'PIERRE HARDY', 'ALTRO']
+const BRANDS     = ['', 'MOMONI', 'CHANEL', 'HERMÈS', 'MIUMIU', 'DRIES VAN NOTEN', 'PROENZA', 'CHROME HEARTS', 'PIERRE HARDY']
 
 const emptyRiga = {
   tipoArticolo: 'Suola',
@@ -34,7 +35,6 @@ const emptyOrder = {
   stagione: 'SS 2027',
   tipoAttivita: 'Campionario',
   fornitore: '',
-  fornitoreIndirizzo: '',
   brand: '',
   spedizione: 'CAMION - BY TRUCK',
   termini: 'PORTO FRANCO',
@@ -97,7 +97,7 @@ function RigaEditor({ riga, index, total, onChange, onRemove }) {
         <input value={riga.lavorazione} onChange={e => set('lavorazione', e.target.value)} />
       </div>
 
-      {riga.tipoArticolo === 'Suola' ? (
+      {(riga.tipoArticolo === 'Suola' || riga.tipoArticolo === 'Tacco') ? (
         <>
           <div className="form-section-sub">
             Numerata — paia per taglia
@@ -166,6 +166,9 @@ export default function OrdineForm({ ordine, onClose }) {
   } : emptyOrder)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [nuovoBrand, setNuovoBrand] = useState(
+    isEdit && ordine.brand && !BRANDS.includes(ordine.brand)
+  )
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
 
@@ -186,7 +189,7 @@ export default function OrdineForm({ ordine, onClose }) {
     for (let i = 0; i < form.righe.length; i++) {
       const r = form.righe[i]
       if (!r.articolo.trim()) { setError(`Riga ${i+1}: inserisci la descrizione articolo`); return }
-      if (r.tipoArticolo === 'Suola') {
+      if (r.tipoArticolo === 'Suola' || r.tipoArticolo === 'Tacco') {
         const tot = Object.values(r.numerata || {}).reduce((s, v) => s + (Number(v) || 0), 0)
         if (tot === 0) { setError(`Riga ${i+1}: inserisci almeno una quantità nella numerata`); return }
       } else if (!r.quantita) {
@@ -199,7 +202,7 @@ export default function OrdineForm({ ordine, onClose }) {
     try {
       const righe = form.righe.map(r => {
         const nr = { ...r }
-        if (r.tipoArticolo === 'Suola') {
+        if (r.tipoArticolo === 'Suola' || r.tipoArticolo === 'Tacco') {
           nr.quantita = Object.values(r.numerata || {}).reduce((s, v) => s + (Number(v) || 0), 0)
           nr.unitaMisura = 'PA'
         } else {
@@ -253,9 +256,24 @@ export default function OrdineForm({ ordine, onClose }) {
             </div>
             <div className="form-group">
               <label>Brand / Cliente</label>
-              <select value={form.brand} onChange={e => set('brand', e.target.value)}>
+              <select
+                value={nuovoBrand ? '__nuovo__' : form.brand}
+                onChange={e => {
+                  if (e.target.value === '__nuovo__') { setNuovoBrand(true); set('brand', '') }
+                  else { setNuovoBrand(false); set('brand', e.target.value) }
+                }}>
                 {BRANDS.map(b => <option key={b} value={b}>{b || '— seleziona —'}</option>)}
+                <option value="__nuovo__">+ NUOVO BRAND…</option>
               </select>
+              {nuovoBrand && (
+                <input
+                  style={{ marginTop: 6 }}
+                  placeholder="Scrivi il nome del brand"
+                  value={form.brand}
+                  onChange={e => set('brand', e.target.value.toUpperCase())}
+                  autoFocus
+                />
+              )}
             </div>
             <div className="form-group">
               <label>Tipo attività</label>
@@ -272,15 +290,9 @@ export default function OrdineForm({ ordine, onClose }) {
           </div>
 
           <div className="form-section-title">Fornitore</div>
-          <div className="form-row col2">
-            <div className="form-group">
-              <label>Nome fornitore *</label>
-              <input value={form.fornitore} onChange={e => set('fornitore', e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Indirizzo</label>
-              <input value={form.fornitoreIndirizzo} onChange={e => set('fornitoreIndirizzo', e.target.value)} />
-            </div>
+          <div className="form-group" style={{ maxWidth: 400 }}>
+            <label>Nome fornitore *</label>
+            <input value={form.fornitore} onChange={e => set('fornitore', e.target.value)} />
           </div>
 
           <div className="form-section-title">
