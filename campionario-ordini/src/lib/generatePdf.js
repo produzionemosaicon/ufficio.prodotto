@@ -1,4 +1,3 @@
-// Genera il PDF ordine fornitore — layout approvato (replica gestionale Mosaicon)
 import { jsPDF } from 'jspdf'
 
 const ACCENT = [44, 110, 106]
@@ -32,25 +31,22 @@ function fmtDate(val) {
 export function generateOrdinePDF(o) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, H = 297, M = 16
+  const righe = o.righe || []
 
-  // ── HEADER BAR ──────────────────────────────────────────
   doc.setFillColor(...ACCENT)
   doc.rect(0, 0, W, 24, 'F')
-
   doc.setTextColor(...WHITE)
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11)
   doc.text('MOSAICON SHOES SRL', M, 10)
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
   doc.text('Corso Novara, 171 — 27029 Vigevano PV', M, 14.5)
   doc.text('P.IVA 03177461203  ·  Tel. 0381-344311  ·  Ufficio Produzione', M, 18)
-
   doc.setFont('helvetica', 'bold'); doc.setFontSize(14)
   doc.text(o.numeroOrdine, W - M, 11, { align: 'right' })
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8)
-  doc.text(`del ${fmtDate(o.createdAt)}`, W - M, 16, { align: 'right' })
+  doc.text('del ' + fmtDate(o.createdAt), W - M, 16, { align: 'right' })
   doc.text('Pagina 1/1', W - M, 20, { align: 'right' })
 
-  // ── TITOLO ──────────────────────────────────────────────
   let y = 33
   doc.setTextColor(...DARK)
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13)
@@ -59,12 +55,8 @@ export function generateOrdinePDF(o) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7)
   doc.text('Ordine libero — descrizione articolo senza codici codificati', M, y + 4.5)
 
-  // ── META BOXES ──────────────────────────────────────────
   y += 12
-  const boxH = 22
-  const half = (W - 2 * M - 6) / 2
-
-  // Sinistra: stagione + tipo attività
+  const boxH = 22, half = (W - 2 * M - 6) / 2
   doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
   doc.roundedRect(M, y, half, boxH, 2, 2, 'FD')
   doc.setTextColor(...MUTED); doc.setFont('helvetica', 'bold'); doc.setFontSize(6)
@@ -74,19 +66,16 @@ export function generateOrdinePDF(o) {
   doc.setTextColor(...ACCENT); doc.setFontSize(9)
   doc.text((o.tipoAttivita || 'CAMPIONARIO').toUpperCase(), M + 4, y + 17)
 
-  // Destra: fornitore
   const rx = M + half + 6
   doc.setFillColor(...LIGHT)
   doc.roundedRect(rx, y, half, boxH, 2, 2, 'FD')
   doc.setTextColor(...MUTED); doc.setFontSize(6)
   doc.text('SPETT.LE / FORNITORE', rx + 4, y + 5)
-  doc.setTextColor(...DARK); doc.setFontSize(11)
+  doc.setTextColor(...DARK); doc.setFont('helvetica', 'bold'); doc.setFontSize(11)
   doc.text(o.fornitore || '—', rx + 4, y + 11)
   doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal'); doc.setFontSize(7)
   if (o.fornitoreIndirizzo) doc.text(o.fornitoreIndirizzo, rx + 4, y + 15.5)
-  if (o.fornitoreEmail)     doc.text(o.fornitoreEmail, rx + 4, y + 19)
 
-  // ── RIGA SPEDIZIONE ─────────────────────────────────────
   y += boxH + 8
   doc.setFillColor(...WHITE); doc.setDrawColor(...BORDER)
   doc.roundedRect(M, y, W - 2 * M, 10, 1.5, 1.5, 'FD')
@@ -103,79 +92,71 @@ export function generateOrdinePDF(o) {
     doc.text(lab, x, y + 4)
     doc.setTextColor(...DARK); doc.setFontSize(7.5)
     doc.text(String(val), x, y + 8)
-    if (i > 0) {
-      doc.setDrawColor(...BORDER)
-      doc.line(M + i * quarter, y + 1, M + i * quarter, y + 9)
-    }
+    if (i > 0) { doc.setDrawColor(...BORDER); doc.line(M + i * quarter, y + 1, M + i * quarter, y + 9) }
   })
 
-  // ── ARTICOLO ────────────────────────────────────────────
   y += 18
-  const tipoLabel = (o.tipoArticolo || 'ARTICOLO').toUpperCase()
-  doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
-  doc.text(`RIGA 1 — ${tipoLabel}`, M, y)
-  doc.setDrawColor(...ACCENT); doc.setLineWidth(0.6)
-  doc.line(M, y + 2, W - M, y + 2)
+  righe.forEach((r, idx) => {
+    if (y > 220) { doc.addPage(); y = 20 }
 
-  y += 8
-  doc.setTextColor(...DARK); doc.setFontSize(10)
-  doc.text(o.articolo || '—', M, y)
-  doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
-  let dy = y + 4.5
-  if (o.colore)      { doc.text(`Colore: ${o.colore}`, M, dy); dy += 4 }
-  if (o.lavorazione) { doc.text(`Lavorazione: ${o.lavorazione}`, M, dy); dy += 4 }
-  if (o.modello)     { doc.text(`Linea: ${o.modello}${o.brand ? ' · ' + o.brand : ''}`, M, dy); dy += 4 }
-  y = dy + 3
+    const tipoLabel = (r.tipoArticolo || 'ARTICOLO').toUpperCase()
+    doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
+    doc.text('RIGA ' + (idx + 1) + ' — ' + tipoLabel, M, y)
+    doc.setDrawColor(...ACCENT); doc.setLineWidth(0.6)
+    doc.line(M, y + 2, W - M, y + 2)
 
-  // ── QUANTITÀ ────────────────────────────────────────────
-  if (o.tipoArticolo === 'Suola' && o.numerata) {
-    // Griglia taglie consecutive
-    const gridW = W - 2 * M
-    const cellW = gridW / TAGLIE.length
-    const rowH = 6
+    y += 8
+    doc.setTextColor(...DARK); doc.setFontSize(10)
+    doc.text(r.articolo || '—', M, y)
+    doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
+    let dy = y + 4.5
+    if (r.colore)      { doc.text('Colore: ' + r.colore, M, dy); dy += 4 }
+    if (r.lavorazione) { doc.text('Lavorazione: ' + r.lavorazione, M, dy); dy += 4 }
+    if (r.modello)     { doc.text('Linea: ' + r.modello, M, dy); dy += 4 }
+    y = dy + 3
 
-    doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.25)
-    doc.rect(M, y, gridW, rowH, 'FD')
-    doc.setTextColor(...MUTED); doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5)
-    TAGLIE.forEach((t, i) => {
-      const cx = M + i * cellW + cellW / 2
-      doc.text(TAGLIE_DISPLAY[t] || t, cx, y + 4, { align: 'center' })
-      if (i > 0) doc.line(M + i * cellW, y, M + i * cellW, y + rowH)
-    })
+    if (r.tipoArticolo === 'Suola' && r.numerata) {
+      const gridW = W - 2 * M
+      const cellW = gridW / TAGLIE.length
+      const rowH = 6
+      doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.25)
+      doc.rect(M, y, gridW, rowH, 'FD')
+      doc.setTextColor(...MUTED); doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5)
+      TAGLIE.forEach((t, i) => {
+        const cx = M + i * cellW + cellW / 2
+        doc.text(TAGLIE_DISPLAY[t] || t, cx, y + 4, { align: 'center' })
+        if (i > 0) doc.line(M + i * cellW, y, M + i * cellW, y + rowH)
+      })
+      const y2 = y + rowH
+      doc.setFillColor(...WHITE)
+      doc.rect(M, y2, gridW, rowH, 'FD')
+      doc.setFontSize(6.5)
+      let totale = 0
+      TAGLIE.forEach((t, i) => {
+        const q = r.numerata[t]
+        const cx = M + i * cellW + cellW / 2
+        if (q) { totale += Number(q); doc.setTextColor(...DARK); doc.text(String(q), cx, y2 + 4, { align: 'center' }) }
+        if (i > 0) { doc.setDrawColor(...BORDER); doc.line(M + i * cellW, y2, M + i * cellW, y2 + rowH) }
+      })
+      y = y2 + rowH + 6
+      doc.setTextColor(...ACCENT); doc.setFontSize(8.5)
+      doc.text('TOTALE PAIA: ' + totale, W - M, y, { align: 'right' })
+      y += 6
+    } else {
+      doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
+      doc.roundedRect(M, y, 70, 12, 1.5, 1.5, 'FD')
+      doc.setTextColor(...MUTED); doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5)
+      doc.text('QUANTITÀ', M + 4, y + 4.5)
+      doc.setTextColor(...DARK); doc.setFontSize(11)
+      doc.text((r.quantita || '—') + ' ' + (r.unitaMisura || ''), M + 4, y + 10)
+      y += 18
+    }
 
-    const y2 = y + rowH
-    doc.setFillColor(...WHITE)
-    doc.rect(M, y2, gridW, rowH, 'FD')
-    doc.setFontSize(6.5)
-    let totale = 0
-    TAGLIE.forEach((t, i) => {
-      const q = o.numerata[t]
-      const cx = M + i * cellW + cellW / 2
-      if (q) {
-        totale += Number(q)
-        doc.setTextColor(...DARK)
-        doc.text(String(q), cx, y2 + 4, { align: 'center' })
-      }
-      if (i > 0) { doc.setDrawColor(...BORDER); doc.line(M + i * cellW, y2, M + i * cellW, y2 + rowH) }
-    })
-
-    y = y2 + rowH + 6
-    doc.setTextColor(...ACCENT); doc.setFontSize(8.5)
-    doc.text(`TOTALE PAIA: ${totale}`, W - M, y, { align: 'right' })
     y += 4
-  } else {
-    // Pellame o Accessorio: quantità semplice
-    doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
-    doc.roundedRect(M, y, 70, 12, 1.5, 1.5, 'FD')
-    doc.setTextColor(...MUTED); doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5)
-    doc.text('QUANTITÀ', M + 4, y + 4.5)
-    doc.setTextColor(...DARK); doc.setFontSize(11)
-    doc.text(`${o.quantita || '—'} ${o.unitaMisura || ''}`, M + 4, y + 10)
-    y += 18
-  }
+  })
 
-  // ── NOTE / CONDIZIONI D'ACQUISTO ────────────────────────
-  y += 6
+  if (y > 230) { doc.addPage(); y = 20 }
+  y += 2
   doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
   doc.text("NOTE / ISTRUZIONI — CONDIZIONI D'ACQUISTO", M, y)
   doc.setDrawColor(...ACCENT); doc.setLineWidth(0.6)
@@ -195,7 +176,7 @@ export function generateOrdinePDF(o) {
     { t: 'si invitano i fornitori a richiedere la dichiarazione di intento', style: 'normal' },
     { t: "INDICARE SEMPRE IL NOSTRO NUMERO D'ORDINE", style: 'bold' },
     { t: 'INDICARE SEMPRE I NOSTRI CODICI ARTICOLO', style: 'bold' },
-    { t: 'Ufficio Produzione  Tel. 0381-344311 Ext. #1 Stefano Rametta', style: 'normal' },
+    { t: 'Ufficio Produzione  Tel. 0381-344311', style: 'normal' },
     { t: '', style: 'normal' },
     { t: "Informativa di sintesi: ai sensi dell'art.13 D.Lgs.196/2003, informiamo che i Vs. dati sono inseriti in banche dati sia", style: 'small' },
     { t: 'elettroniche che cartacee, e sono trattati dagli incaricati solo per finalità amministrative e contabili. I dati potranno', style: 'small' },
@@ -207,29 +188,22 @@ export function generateOrdinePDF(o) {
   const noteBoxH = noteLines.length * 3.8 + 8
   doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
   doc.roundedRect(M, y, W - 2 * M, noteBoxH, 1.5, 1.5, 'FD')
-
   let ty = y + 6
   noteLines.forEach(({ t, style }) => {
-    if (style === 'bold') {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...DARK)
-    } else if (style === 'small') {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...MUTED)
-    } else if (style === 'user') {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...ACCENT)
-    } else {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...DARK)
-    }
+    if (style === 'bold') { doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...DARK) }
+    else if (style === 'small') { doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...MUTED) }
+    else if (style === 'user') { doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...ACCENT) }
+    else { doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...DARK) }
     if (t) doc.text(t, M + 4, ty)
     ty += 3.8
   })
 
-  // ── FOOTER BAR ──────────────────────────────────────────
   doc.setFillColor(...ACCENT)
   doc.rect(0, H - 9, W, 9, 'F')
   doc.setTextColor(...WHITE)
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7)
   doc.text('Mosaicon Shoes SRL — Vigevano (PV)', M, H - 3.5)
-  doc.text(`${o.numeroOrdine} · ${fmtDate(o.createdAt)}`, W - M, H - 3.5, { align: 'right' })
+  doc.text(o.numeroOrdine + ' · ' + fmtDate(o.createdAt), W - M, H - 3.5, { align: 'right' })
 
-  doc.save(`${o.numeroOrdine}.pdf`)
+  doc.save(o.numeroOrdine.replace('/', '-') + '.pdf')
 }
