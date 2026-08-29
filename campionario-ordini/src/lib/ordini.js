@@ -51,11 +51,11 @@ export async function aggiornaOrdine(id, dati) {
   })
 }
 
-export async function avanzaStato(id, statoCorrente) {
+export async function avanzaStato(id, statoCorrente, extra = {}) {
   const flow = ['da_inviare', 'inviato', 'ricevuto']
   const idx = flow.indexOf(statoCorrente)
   if (idx < flow.length - 1) {
-    return aggiornaOrdine(id, { stato: flow[idx + 1] })
+    return aggiornaOrdine(id, { stato: flow[idx + 1], ...extra })
   }
 }
 
