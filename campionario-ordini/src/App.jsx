@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import {
-  List, Clock, Send, CheckCircle, Package, Layers,
-  Plus, Search, SlidersHorizontal, ChevronUp, ChevronDown
+  List, Clock, Send, CheckCircle, Package, Layers, Box,
+  Plus, Search, ChevronUp, ChevronDown, AlertTriangle
 } from 'lucide-react'
 import { subscribeOrdini } from './lib/ordini'
 import StatusPill from './components/StatusPill'
 import DettaglioPanel from './components/DettaglioPanel'
-import OrdineForm from './components/OrdineForm'
+import OrdineForm, { ATTIVITA } from './components/OrdineForm'
 import './App.css'
 
 const STATO_LABELS = {
@@ -19,6 +19,7 @@ const TIPO_LABELS = {
   all:          { label: 'Tutti i tipi', icon: Layers },
   Suola:        { label: 'Suole',        icon: Package },
   Tacco:        { label: 'Tacchi',       icon: Package },
+  Forme:        { label: 'Forme',        icon: Box },
   Pellame:      { label: 'Pellami',      icon: Layers },
   Accessorio:   { label: 'Accessori',    icon: Package },
 }
@@ -50,6 +51,8 @@ export default function App() {
   const [filtroBrand, setFiltroBrand] = useState('all')
   const [filtroFornitore, setFiltroFornitore] = useState('all')
   const [filtroOperatore, setFiltroOperatore] = useState('all')
+  const [filtroAttivita, setFiltroAttivita]   = useState('all')
+  const [soloScaduti, setSoloScaduti]         = useState(false)
   const [search, setSearch]           = useState('')
   const [selected, setSelected]       = useState(null)
   const [showForm, setShowForm]       = useState(false)
@@ -63,7 +66,7 @@ export default function App() {
   }, [])
 
   const counts = useMemo(() => {
-    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Tacco: 0, Pellame: 0, Accessorio: 0 }
+    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Tacco: 0, Forme: 0, Pellame: 0, Accessorio: 0 }
     ordini.forEach(o => {
       if (c[o.stato] !== undefined) c[o.stato]++
       if (c[o.tipoArticolo] !== undefined) c[o.tipoArticolo]++
@@ -72,39 +75,41 @@ export default function App() {
   }, [ordini])
 
   const brands = useMemo(() => {
-    const set = new Set()
-    ordini.forEach(o => { if (o.brand) set.add(o.brand) })
-    return Array.from(set).sort()
+    const s = new Set()
+    ordini.forEach(o => { if (o.brand) s.add(o.brand) })
+    return Array.from(s).sort()
   }, [ordini])
 
   const fornitori = useMemo(() => {
-    const set = new Set()
-    ordini.forEach(o => { if (o.fornitore) set.add(o.fornitore) })
-    return Array.from(set).sort()
+    const s = new Set()
+    ordini.forEach(o => { if (o.fornitore) s.add(o.fornitore) })
+    return Array.from(s).sort()
   }, [ordini])
 
   const operatori = useMemo(() => {
-    const set = new Set()
-    ordini.forEach(o => { if (o.ordinatoDa) set.add(o.ordinatoDa) })
-    return Array.from(set).sort()
+    const s = new Set()
+    ordini.forEach(o => { if (o.ordinatoDa) s.add(o.ordinatoDa) })
+    return Array.from(s).sort()
   }, [ordini])
 
-  const scaduti = useMemo(() =>
-    ordini.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)).length, [ordini])
+  const ordiniScaduti = useMemo(() =>
+    ordini.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)), [ordini])
 
   const filtered = useMemo(() => {
     let list = [...ordini]
+    if (soloScaduti) list = list.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna))
     if (filtroStato !== 'all') list = list.filter(o => o.stato === filtroStato)
     if (filtroTipo  !== 'all') list = list.filter(o => o.tipoArticolo === filtroTipo)
     if (filtroBrand !== 'all') list = list.filter(o => o.brand === filtroBrand)
     if (filtroFornitore !== 'all') list = list.filter(o => o.fornitore === filtroFornitore)
     if (filtroOperatore !== 'all') list = list.filter(o => o.ordinatoDa === filtroOperatore)
+    if (filtroAttivita !== 'all') list = list.filter(o => o.tipoAttivita === filtroAttivita)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(o =>
         o.fornitore?.toLowerCase().includes(q) ||
         o.articolo?.toLowerCase().includes(q)  ||
-        o.modello?.toLowerCase().includes(q)   ||
+        o.ordinatoDa?.toLowerCase().includes(q) ||
         o.numeroOrdine?.toLowerCase().includes(q)
       )
     }
@@ -117,7 +122,7 @@ export default function App() {
       return 0
     })
     return list
-  }, [ordini, filtroStato, filtroTipo, filtroBrand, filtroFornitore, filtroOperatore, search, sortCol, sortDir])
+  }, [ordini, soloScaduti, filtroStato, filtroTipo, filtroBrand, filtroFornitore, filtroOperatore, filtroAttivita, search, sortCol, sortDir])
 
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -129,6 +134,14 @@ export default function App() {
     return sortDir === 'asc' ? <ChevronUp size={11} /> : <ChevronDown size={11} />
   }
 
+  function azzeraFiltri() {
+    setFiltroFornitore('all'); setFiltroBrand('all')
+    setFiltroOperatore('all'); setFiltroAttivita('all')
+    setSoloScaduti(false)
+  }
+  const filtriAttivi = filtroFornitore !== 'all' || filtroBrand !== 'all'
+    || filtroOperatore !== 'all' || filtroAttivita !== 'all' || soloScaduti
+
   function openEdit(o) { setEditOrdine(o); setShowForm(true) }
   function closeForm()  { setShowForm(false); setEditOrdine(null) }
 
@@ -137,9 +150,7 @@ export default function App() {
 
       <header className="header">
         <div className="logo">
-          <div className="logo-icon">
-            <List size={14} color="white" />
-          </div>
+          <div className="logo-icon"><List size={14} color="white" /></div>
           <div>
             <div className="logo-name">Campionario Ordini</div>
             <div className="logo-sub">Mosaicon Group</div>
@@ -153,8 +164,7 @@ export default function App() {
         {Object.entries(STATO_LABELS).map(([k, { label, icon: Icon }]) => (
           <button key={k} className={`nav-item ${filtroStato === k ? 'active' : ''}`}
             onClick={() => setFiltroStato(k)}>
-            <Icon size={14} />
-            {label}
+            <Icon size={14} />{label}
             <span className="nav-count">{counts[k] ?? 0}</span>
           </button>
         ))}
@@ -165,33 +175,12 @@ export default function App() {
         {Object.entries(TIPO_LABELS).map(([k, { label, icon: Icon }]) => (
           <button key={k} className={`nav-item ${filtroTipo === k ? 'active' : ''}`}
             onClick={() => setFiltroTipo(k)}>
-            <Icon size={14} />
-            {label}
+            <Icon size={14} />{label}
             {k !== 'all' && <span className="nav-count">{counts[k] ?? 0}</span>}
           </button>
         ))}
 
         <div className="nav-divider" />
-
-        {brands.length > 0 && (
-          <>
-            <div className="nav-section-label">Brand</div>
-            <button className={`nav-item ${filtroBrand === 'all' ? 'active' : ''}`}
-              onClick={() => setFiltroBrand('all')}>
-              <Package size={14} />
-              Tutti i brand
-            </button>
-            {brands.map(b => (
-              <button key={b} className={`nav-item ${filtroBrand === b ? 'active' : ''}`}
-                onClick={() => setFiltroBrand(b)}>
-                <Package size={14} />
-                {b}
-                <span className="nav-count">{ordini.filter(o => o.brand === b).length}</span>
-              </button>
-            ))}
-            <div className="nav-divider" />
-          </>
-        )}
 
         <div className="sidebar-stats">
           <div className="nav-section-label" style={{ padding: '0 0 8px' }}>Riepilogo</div>
@@ -200,8 +189,10 @@ export default function App() {
             <span className="stat-val">{counts.all}</span>
           </div>
           <div className="stat-row">
-            <span className="stat-label">Scaduti / in ritardo</span>
-            <span className="stat-val" style={{ color: scaduti > 0 ? '#C0392B' : undefined }}>{scaduti}</span>
+            <span className="stat-label">Da sollecitare</span>
+            <span className="stat-val" style={{ color: ordiniScaduti.length > 0 ? '#C0392B' : undefined }}>
+              {ordiniScaduti.length}
+            </span>
           </div>
         </div>
       </aside>
@@ -214,18 +205,33 @@ export default function App() {
           </div>
           <div className="search-box">
             <Search size={13} color="var(--text-muted)" />
-            <input
-              placeholder="Cerca fornitore, articolo…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+            <input placeholder="Cerca fornitore, articolo, operatore…"
+              value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <button className="btn-primary" onClick={() => { setEditOrdine(null); setShowForm(true) }}>
             <Plus size={13} /> Nuovo ordine
           </button>
         </div>
 
+        {ordiniScaduti.length > 0 && !soloScaduti && (
+          <div className="alert-banner" onClick={() => setSoloScaduti(true)}>
+            <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>
+                {ordiniScaduti.length} {ordiniScaduti.length === 1 ? 'ordine scaduto' : 'ordini scaduti'} da sollecitare
+              </strong>
+              <div style={{ fontSize: 11, marginTop: 2, opacity: 0.85 }}>
+                Data consegna superata e merce non ancora ricevuta — clicca per vederli
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="filter-row">
+          <select className="filter-select" value={filtroAttivita} onChange={e => setFiltroAttivita(e.target.value)}>
+            <option value="all">Attività: tutte</option>
+            {ATTIVITA.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
           <select className="filter-select" value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}>
             <option value="all">Fornitore: tutti</option>
             {fornitori.map(f => <option key={f} value={f}>{f}</option>)}
@@ -238,10 +244,13 @@ export default function App() {
             <option value="all">Ordinato da: tutti</option>
             {operatori.map(op => <option key={op} value={op}>{op}</option>)}
           </select>
-          {(filtroFornitore !== 'all' || filtroBrand !== 'all' || filtroOperatore !== 'all') && (
-            <button className="btn-secondary" onClick={() => { setFiltroFornitore('all'); setFiltroBrand('all'); setFiltroOperatore('all') }}>
-              Azzera filtri
-            </button>
+          {soloScaduti && (
+            <span className="filter-chip-active">
+              <AlertTriangle size={11} /> Solo scaduti
+            </span>
+          )}
+          {filtriAttivi && (
+            <button className="btn-secondary" onClick={azzeraFiltri}>Azzera filtri</button>
           )}
         </div>
 
@@ -266,7 +275,7 @@ export default function App() {
               <List size={32} color="var(--text-muted)" />
               <div>Nessun ordine trovato</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                {search ? 'Prova a cambiare i termini di ricerca' : 'Crea il primo ordine con il pulsante in alto'}
+                {search || filtriAttivi ? 'Prova a cambiare i filtri' : 'Crea il primo ordine con il pulsante in alto'}
               </div>
             </div>
           ) : (
@@ -276,12 +285,15 @@ export default function App() {
                   <th onClick={() => toggleSort('numeroOrdine')} className="sortable">
                     N° Ordine <SortIcon col="numeroOrdine" />
                   </th>
+                  <th onClick={() => toggleSort('ordinatoDa')} className="sortable">
+                    Ordinato da <SortIcon col="ordinatoDa" />
+                  </th>
                   <th onClick={() => toggleSort('fornitore')} className="sortable">
                     Fornitore <SortIcon col="fornitore" />
                   </th>
                   <th>Articolo</th>
                   <th>Tipo</th>
-                  <th>Stagione</th>
+                  <th>Attività</th>
                   <th onClick={() => toggleSort('quantita')} className="sortable">
                     Qtà <SortIcon col="quantita" />
                   </th>
@@ -297,12 +309,11 @@ export default function App() {
                 {filtered.map(o => {
                   const scad = o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)
                   return (
-                    <tr
-                      key={o.id}
-                      className={selected?.id === o.id ? 'selected' : ''}
-                      onClick={() => setSelected(selected?.id === o.id ? null : o)}
-                    >
+                    <tr key={o.id}
+                      className={`${selected?.id === o.id ? 'selected' : ''} ${scad ? 'row-scaduto' : ''}`}
+                      onClick={() => setSelected(selected?.id === o.id ? null : o)}>
                       <td className="td-mono">{o.numeroOrdine}</td>
+                      <td className="td-operatore">{o.ordinatoDa || '—'}</td>
                       <td><strong>{o.fornitore}</strong></td>
                       <td>{o.articolo}</td>
                       <td>
@@ -310,9 +321,12 @@ export default function App() {
                           {o.tipoArticolo}
                         </span>
                       </td>
-                      <td className="td-secondary">{o.stagione}{o.tipoAttivita ? ` · ${o.tipoAttivita.substring(0,5)}.` : ''}</td>
+                      <td className="td-secondary">{o.stagione} · {o.tipoAttivita || ''}</td>
                       <td className="td-mono">{o.quantita} {o.unitaMisura}</td>
-                      <td className={`td-mono ${scad ? 'text-danger' : ''}`}>{fmt(o.dataConsegna)}</td>
+                      <td className={`td-mono ${scad ? 'text-danger' : ''}`}>
+                        {scad && <AlertTriangle size={10} style={{ marginRight: 3, verticalAlign: -1 }} />}
+                        {fmt(o.dataConsegna)}
+                      </td>
                       <td><StatusPill stato={o.stato} /></td>
                     </tr>
                   )
@@ -331,12 +345,7 @@ export default function App() {
         />
       )}
 
-      {showForm && (
-        <OrdineForm
-          ordine={editOrdine}
-          onClose={closeForm}
-        />
-      )}
+      {showForm && <OrdineForm ordine={editOrdine} onClose={closeForm} />}
     </div>
   )
 }
