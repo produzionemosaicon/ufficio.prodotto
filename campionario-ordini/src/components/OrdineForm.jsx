@@ -194,3 +194,187 @@ export default function OrdineForm({ ordine, onClose }) {
 
     for (let i = 0; i < form.righe.length; i++) {
       const r = form.righe[i]
+      if (!r.articolo.trim()) { setError(`Riga ${i+1}: inserisci la descrizione articolo`); return }
+      if (NUMERATA_TIPI.includes(r.tipoArticolo)) {
+        const tot = Object.values(r.numerata || {}).reduce((s, v) => s + (Number(v) || 0), 0)
+        if (tot === 0) { setError(`Riga ${i+1}: inserisci almeno una quantità nella numerata`); return }
+      } else if (!r.quantita) {
+        setError(`Riga ${i+1}: inserisci la quantità`); return
+      }
+    }
+
+    setError('')
+    setSaving(true)
+    try {
+      const righe = form.righe.map(r => {
+        const nr = { ...r }
+        if (NUMERATA_TIPI.includes(r.tipoArticolo)) {
+          nr.quantita = Object.values(r.numerata || {}).reduce((s, v) => s + (Number(v) || 0), 0)
+          nr.unitaMisura = 'PA'
+        } else {
+          nr.numerata = {}
+          if (r.tipoArticolo === 'Accessorio') nr.unitaMisura = 'PZ'
+        }
+        return nr
+      })
+
+      const dati = { ...form, righe }
+      dati.quantita = righe.reduce((s, r) => s + (Number(r.quantita) || 0), 0)
+      dati.unitaMisura = righe.length === 1 ? righe[0].unitaMisura : 'MIX'
+      dati.tipoArticolo = righe.length === 1 ? righe[0].tipoArticolo : 'Misto'
+      dati.articolo = righe.length === 1 ? righe[0].articolo : righe.map(r => r.articolo).join(' + ')
+
+      if (isEdit) await aggiornaOrdine(ordine.id, dati)
+      else        await creaOrdine(dati)
+      onClose()
+    } catch (e) {
+      setError('Errore salvataggio: ' + e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal modal-lg">
+        <div className="modal-header">
+          <div>
+            <div className="modal-title">{isEdit ? 'Modifica ordine' : 'Nuovo ordine'}</div>
+            {isEdit && <div className="modal-sub">{ordine.numeroOrdine}</div>}
+          </div>
+          <button className="icon-btn" onClick={onClose}><X size={15} /></button>
+        </div>
+
+        <div className="modal-body">
+          {error && <div className="form-error">{error}</div>}
+
+          <div className="form-section-title">Operatore</div>
+          <div className="form-group" style={{ maxWidth: 300 }}>
+            <label>Ordinato da *</label>
+            <select
+              value={nuovoOperatore ? '__nuovo__' : form.ordinatoDa}
+              onChange={e => {
+                if (e.target.value === '__nuovo__') { setNuovoOperatore(true); set('ordinatoDa', '') }
+                else { setNuovoOperatore(false); set('ordinatoDa', e.target.value) }
+              }}>
+              {OPERATORI.map(op => <option key={op} value={op}>{op || '— seleziona —'}</option>)}
+              <option value="__nuovo__">+ NUOVO NOME…</option>
+            </select>
+            {nuovoOperatore && (
+              <input
+                style={{ marginTop: 6 }}
+                placeholder="Scrivi il nome"
+                value={form.ordinatoDa}
+                onChange={e => set('ordinatoDa', e.target.value.toUpperCase())}
+                autoFocus
+              />
+            )}
+          </div>
+
+          <div className="form-section-title">Stagione e tipo attività</div>
+          <div className="form-row col3">
+            <div className="form-group">
+              <label>Stagione *</label>
+              <input value={form.stagione} onChange={e => set('stagione', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Brand / Cliente</label>
+              <select
+                value={nuovoBrand ? '__nuovo__' : form.brand}
+                onChange={e => {
+                  if (e.target.value === '__nuovo__') { setNuovoBrand(true); set('brand', '') }
+                  else { setNuovoBrand(false); set('brand', e.target.value) }
+                }}>
+                {BRANDS.map(b => <option key={b} value={b}>{b || '— seleziona —'}</option>)}
+                <option value="__nuovo__">+ NUOVO BRAND…</option>
+              </select>
+              {nuovoBrand && (
+                <input
+                  style={{ marginTop: 6 }}
+                  placeholder="Scrivi il nome del brand"
+                  value={form.brand}
+                  onChange={e => set('brand', e.target.value.toUpperCase())}
+                  autoFocus
+                />
+              )}
+            </div>
+            <div className="form-group">
+              <label>Tipo attività</label>
+              <select value={form.tipoAttivita} onChange={e => set('tipoAttivita', e.target.value)}>
+                {ATTIVITA.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-section-title">Fornitore</div>
+          <div className="form-group" style={{ maxWidth: 400 }}>
+            <label>Nome fornitore *</label>
+            <input value={form.fornitore} onChange={e => set('fornitore', e.target.value)} />
+          </div>
+
+          <div className="form-section-title">
+            Righe ordine
+            <span className="totale-badge">{form.righe.length} {form.righe.length === 1 ? 'riga' : 'righe'}</span>
+          </div>
+
+          {form.righe.map((r, i) => (
+            <RigaEditor
+              key={i}
+              riga={r}
+              index={i}
+              total={form.righe.length}
+              onChange={updateRiga}
+              onRemove={removeRiga}
+            />
+          ))}
+
+          <button type="button" className="btn-add-riga" onClick={addRiga}>
+            <Plus size={13} /> Aggiungi riga
+          </button>
+
+          <div className="form-section-title">Spedizione e pagamento</div>
+          <div className="form-row col2">
+            <div className="form-group">
+              <label>Modalità spedizione</label>
+              <select value={form.spedizione} onChange={e => set('spedizione', e.target.value)}>
+                {SPEDIZIONI.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Termini consegna</label>
+              <select value={form.termini} onChange={e => set('termini', e.target.value)}>
+                {TERMINI.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-row col2">
+            <div className="form-group">
+              <label>Pagamento</label>
+              <select value={form.pagamento} onChange={e => set('pagamento', e.target.value)}>
+                {PAGAMENTI.map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Data consegna richiesta</label>
+              <input type="date" value={form.dataConsegna} onChange={e => set('dataConsegna', e.target.value)} />
+            </div>
+          </div>
+
+          <div className="form-section-title">Note aggiuntive</div>
+          <div className="form-group">
+            <label>Istruzioni speciali (compariranno in evidenza nel PDF)</label>
+            <textarea rows={2} value={form.note} onChange={e => set('note', e.target.value)} />
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Annulla</button>
+          <button className="btn-primary" onClick={handleSave} disabled={saving}>
+            <Save size={13} />
+            {saving ? 'Salvataggio…' : isEdit ? 'Salva modifiche' : 'Crea ordine'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
