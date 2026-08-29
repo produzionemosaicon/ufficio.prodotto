@@ -12,6 +12,8 @@ export const TAGLIE = [
   '40','40.5','41','41.5','42','42.5','43','43.5','44','44.5','45','45.5','46'
 ]
 
+export const NUMERATA_TIPI = ['Suola', 'Tacco', 'Forme']
+
 const TAGLIE_DISPLAY = {
   '34.5':'34½','35.5':'35½','36.5':'36½','37.5':'37½','38.5':'38½','39.5':'39½',
   '40.5':'40½','41.5':'41½','42.5':'42½','43.5':'43½','44.5':'44½','45.5':'45½'
@@ -33,7 +35,6 @@ export function generateOrdinePDF(o) {
   const W = 210, H = 297, M = 16
   const righe = o.righe || []
 
-  // HEADER
   doc.setFillColor(...ACCENT)
   doc.rect(0, 0, W, 24, 'F')
   doc.setTextColor(...WHITE)
@@ -48,13 +49,11 @@ export function generateOrdinePDF(o) {
   doc.text('del ' + fmtDate(o.createdAt), W - M, 16, { align: 'right' })
   doc.text('Pagina 1/1', W - M, 20, { align: 'right' })
 
-  // TITOLO
   let y = 33
   doc.setTextColor(...DARK)
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13)
   doc.text('ORDINE FORNITORE', M, y)
 
-  // META BOXES
   y += 12
   const boxH = 22, half = (W - 2 * M - 6) / 2
   doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
@@ -74,7 +73,6 @@ export function generateOrdinePDF(o) {
   doc.setTextColor(...DARK); doc.setFont('helvetica', 'bold'); doc.setFontSize(11)
   doc.text(o.fornitore || '—', rx + 4, y + 11)
 
-  // SPEDIZIONE
   y += boxH + 8
   doc.setFillColor(...WHITE); doc.setDrawColor(...BORDER)
   doc.roundedRect(M, y, W - 2 * M, 10, 1.5, 1.5, 'FD')
@@ -94,13 +92,9 @@ export function generateOrdinePDF(o) {
     if (i > 0) { doc.setDrawColor(...BORDER); doc.line(M + i * quarter, y + 1, M + i * quarter, y + 9) }
   })
 
-  // RIGHE ARTICOLO
   y += 18
   righe.forEach((r, idx) => {
-    if (y > 220) {
-      doc.addPage()
-      y = 20
-    }
+    if (y > 220) { doc.addPage(); y = 20 }
 
     const tipoLabel = (r.tipoArticolo || 'ARTICOLO').toUpperCase()
     doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
@@ -118,7 +112,7 @@ export function generateOrdinePDF(o) {
     if (r.modello)     { doc.text('Linea: ' + r.modello, M, dy); dy += 4 }
     y = dy + 3
 
-    if ((r.tipoArticolo === 'Suola' || r.tipoArticolo === 'Tacco') && r.numerata) {
+    if (NUMERATA_TIPI.includes(r.tipoArticolo) && r.numerata) {
       const gridW = W - 2 * M
       const cellW = gridW / TAGLIE.length
       const rowH = 6
@@ -158,7 +152,6 @@ export function generateOrdinePDF(o) {
     y += 4
   })
 
-  // NOTE
   if (y > 230) { doc.addPage(); y = 20 }
   y += 2
   doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
@@ -202,7 +195,6 @@ export function generateOrdinePDF(o) {
     ty += 3.8
   })
 
-  // FOOTER
   doc.setFillColor(...ACCENT)
   doc.rect(0, H - 9, W, 9, 'F')
   doc.setTextColor(...WHITE)
