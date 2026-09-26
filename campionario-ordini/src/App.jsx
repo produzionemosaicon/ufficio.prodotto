@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import {
   List, Clock, Send, CheckCircle, Package, Layers, Box,
-  Plus, Search, ChevronUp, ChevronDown, AlertTriangle
+  Plus, Search, ChevronUp, ChevronDown, AlertTriangle, Check
 } from 'lucide-react'
 import { subscribeOrdini } from './lib/ordini'
 import StatusPill from './components/StatusPill'
@@ -44,6 +44,66 @@ function isScaduto(val) {
   return d < new Date()
 }
 
+/* ── MULTISELECT ATTIVITÀ ──────────────────────────────── */
+function MultiSelectAttivita({ selezionate, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  function toggle(a) {
+    onChange(selezionate.includes(a)
+      ? selezionate.filter(x => x !== a)
+      : [...selezionate, a])
+  }
+
+  const etichetta =
+    selezionate.length === 0 ? 'Attività: tutte'
+    : selezionate.length === 1 ? `Attività: ${selezionate[0]}`
+    : `Attività: ${selezionate.length} selezionate`
+
+  return (
+    <div className="multiselect" ref={ref}>
+      <button
+        type="button"
+        className={`filter-select multiselect-btn ${selezionate.length > 0 ? 'has-sel' : ''}`}
+        onClick={() => setOpen(o => !o)}>
+        {etichetta}
+        <ChevronDown size={13} style={{ marginLeft: 6, flexShrink: 0 }} />
+      </button>
+
+      {open && (
+        <div className="multiselect-panel">
+          {ATTIVITA.map(a => {
+            const sel = selezionate.includes(a)
+            return (
+              <button key={a} type="button"
+                className={`multiselect-item ${sel ? 'sel' : ''}`}
+                onClick={() => toggle(a)}>
+                <span className={`ms-check ${sel ? 'on' : ''}`}>
+                  {sel && <Check size={11} strokeWidth={3} />}
+                </span>
+                {a}
+              </button>
+            )
+          })}
+          {selezionate.length > 0 && (
+            <button type="button" className="multiselect-clear" onClick={() => onChange([])}>
+              Deseleziona tutte
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function App() {
   const [ordini, setOrdini] = useState([])
   const [filtroStato, setFiltroStato] = useState('all')
@@ -51,7 +111,7 @@ export default function App() {
   const [filtroBrand, setFiltroBrand] = useState('all')
   const [filtroFornitore, setFiltroFornitore] = useState('all')
   const [filtroOperatore, setFiltroOperatore] = useState('all')
-  const [filtroAttivita, setFiltroAttivita]   = useState('all')
+  const [filtroAttivita, setFiltroAttivita]   = useState([])
   const [soloScaduti, setSoloScaduti]         = useState(false)
   const [search, setSearch]           = useState('')
   const [selected, setSelected]       = useState(null)
@@ -103,7 +163,7 @@ export default function App() {
     if (filtroBrand !== 'all') list = list.filter(o => o.brand === filtroBrand)
     if (filtroFornitore !== 'all') list = list.filter(o => o.fornitore === filtroFornitore)
     if (filtroOperatore !== 'all') list = list.filter(o => o.ordinatoDa === filtroOperatore)
-    if (filtroAttivita !== 'all') list = list.filter(o => o.tipoAttivita === filtroAttivita)
+    if (filtroAttivita.length > 0) list = list.filter(o => filtroAttivita.includes(o.tipoAttivita))
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(o =>
@@ -136,11 +196,11 @@ export default function App() {
 
   function azzeraFiltri() {
     setFiltroFornitore('all'); setFiltroBrand('all')
-    setFiltroOperatore('all'); setFiltroAttivita('all')
+    setFiltroOperatore('all'); setFiltroAttivita([])
     setSoloScaduti(false)
   }
   const filtriAttivi = filtroFornitore !== 'all' || filtroBrand !== 'all'
-    || filtroOperatore !== 'all' || filtroAttivita !== 'all' || soloScaduti
+    || filtroOperatore !== 'all' || filtroAttivita.length > 0 || soloScaduti
 
   function openEdit(o) { setEditOrdine(o); setShowForm(true) }
   function closeForm()  { setShowForm(false); setEditOrdine(null) }
@@ -228,10 +288,7 @@ export default function App() {
         )}
 
         <div className="filter-row">
-          <select className="filter-select" value={filtroAttivita} onChange={e => setFiltroAttivita(e.target.value)}>
-            <option value="all">Attività: tutte</option>
-            {ATTIVITA.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+          <MultiSelectAttivita selezionate={filtroAttivita} onChange={setFiltroAttivita} />
           <select className="filter-select" value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}>
             <option value="all">Fornitore: tutti</option>
             {fornitori.map(f => <option key={f} value={f}>{f}</option>)}
@@ -253,6 +310,18 @@ export default function App() {
             <button className="btn-secondary" onClick={azzeraFiltri}>Azzera filtri</button>
           )}
         </div>
+
+        {filtroAttivita.length > 0 && (
+          <div className="chip-row">
+            {filtroAttivita.map(a => (
+              <span key={a} className="filter-chip">
+                {a}
+                <button type="button"
+                  onClick={() => setFiltroAttivita(filtroAttivita.filter(x => x !== a))}>×</button>
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="stats-row">
           {[
