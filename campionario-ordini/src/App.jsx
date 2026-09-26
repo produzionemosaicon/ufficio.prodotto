@@ -19,6 +19,7 @@ const TIPO_LABELS = {
   all:          { label: 'Tutti i tipi', icon: Layers },
   Suola:        { label: 'Suole',        icon: Package },
   Tacco:        { label: 'Tacchi',       icon: Package },
+  Sottopiede:   { label: 'Sottopiedi',   icon: Layers },
   Forme:        { label: 'Forme',        icon: Box },
   Pellame:      { label: 'Pellami',      icon: Layers },
   Accessorio:   { label: 'Accessori',    icon: Package },
@@ -44,6 +45,7 @@ function isScaduto(val) {
   return d < new Date()
 }
 
+/* ── MULTISELECT ATTIVITÀ ──────────────────────────────── */
 function MultiSelectAttivita({ selezionate, onChange, conteggi }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -112,6 +114,7 @@ function MultiSelectAttivita({ selezionate, onChange, conteggi }) {
     </div>
   )
 }
+
 export default function App() {
   const [ordini, setOrdini] = useState([])
   const [filtroStato, setFiltroStato] = useState('all')
@@ -134,7 +137,7 @@ export default function App() {
   }, [])
 
   const counts = useMemo(() => {
-    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Tacco: 0, Forme: 0, Pellame: 0, Accessorio: 0 }
+    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Tacco: 0, Sottopiede: 0, Forme: 0, Pellame: 0, Accessorio: 0 }
     ordini.forEach(o => {
       if (c[o.stato] !== undefined) c[o.stato]++
       if (c[o.tipoArticolo] !== undefined) c[o.tipoArticolo]++

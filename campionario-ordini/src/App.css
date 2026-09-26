@@ -150,7 +150,6 @@
 .btn-danger-sm {
   padding: 4px 10px; font-size: 11px; font-weight: 600;
   background: var(--danger); color: white; border: none; border-radius: 5px;
-  display: flex; align-items: center; gap: 4px;
 }
 .btn-secondary-sm {
   padding: 4px 10px; font-size: 11px;
@@ -236,7 +235,6 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
 }
 .type-tag.mat  { background: #EDE9FF; color: #5B3FBF; }
 .type-tag.comp { background: #FFF0E0; color: #9A5C00; }
-.type-tag.acc  { background: #E0F2F1; color: #00695C; }
 
 /* ── EMPTY STATE ─────────────────────────────────────────── */
 .empty-state {
@@ -322,7 +320,6 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
   display: flex; flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,0.18);
 }
-.modal-lg { width: 680px; }
 .modal-header {
   padding: 20px 24px; border-bottom: 1px solid var(--border);
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -344,8 +341,6 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
 .form-section-title:first-child { margin-top: 0; }
 .form-row { display: flex; gap: 12px; margin-bottom: 2px; }
 .form-row.col2 > .form-group { flex: 1; }
-.form-row.col3 { display: flex; gap: 12px; margin-bottom: 2px; }
-.form-row.col3 > .form-group { flex: 1; }
 .form-group {
   display: flex; flex-direction: column; gap: 5px;
   margin-bottom: 14px; flex: 1;
@@ -375,6 +370,9 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
   font-size: 12px; color: var(--danger); margin-bottom: 16px;
 }
 
+/* ── MODAL LARGE ─────────────────────────────────────────── */
+.modal-lg { width: 680px; }
+
 /* ── RADIO PILLS ─────────────────────────────────────────── */
 .radio-pills { display: flex; gap: 6px; }
 .radio-pill {
@@ -390,17 +388,17 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
 
 /* ── TIPO ARTICOLO ───────────────────────────────────────── */
 .tipo-grid {
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 10px; margin-bottom: 16px;
 }
 .tipo-btn {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   border: 1px solid var(--border); border-radius: 8px;
-  padding: 12px 6px; background: var(--surface);
+  padding: 14px 8px; background: var(--surface);
   color: var(--text-muted);
 }
-.tipo-btn span { font-size: 11px; font-weight: 500; color: var(--text-secondary); }
-.tipo-btn small { font-size: 9px; color: var(--text-muted); }
+.tipo-btn span { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.tipo-btn small { font-size: 10px; color: var(--text-muted); }
 .tipo-btn.active {
   border-color: var(--accent); background: var(--accent-light);
   color: var(--accent);
@@ -461,6 +459,9 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
   padding: 2px 7px; border-radius: 3px;
 }
 
+/* ── TYPE TAG accessorio ─────────────────────────────────── */
+.type-tag.acc { background: #E0F2F1; color: #00695C; }
+
 /* ── RIGA EDITOR ─────────────────────────────────────────── */
 .riga-editor {
   border: 1px solid var(--border); border-radius: 8px;
@@ -489,69 +490,11 @@ td { padding: 11px 14px; font-size: 12px; vertical-align: middle; }
 }
 .btn-add-riga:hover { background: #D5ECEA; }
 
-/* ── FILTER ROW ──────────────────────────────────────────── */
-.filter-row {
-  display: flex; gap: 8px; margin-bottom: 16px; align-items: center;
-  flex-wrap: wrap;
-}
-.filter-select {
-  border: 1px solid var(--border); border-radius: 6px;
-  padding: 7px 10px; font-size: 12px;
-  background: var(--surface); color: var(--text-secondary);
-  outline: none; cursor: pointer;
-}
-.filter-select:focus { border-color: var(--accent); }
-.filter-chip-active {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: var(--danger-light); color: var(--danger);
-  border: 1px solid #F5C6C3; border-radius: 20px;
-  padding: 5px 12px; font-size: 11px; font-weight: 600;
-}
+/* ── COL3 ────────────────────────────────────────────────── */
+.form-row.col3 > .form-group { flex: 1; }
+.form-row.col3 { display: flex; gap: 12px; margin-bottom: 2px; }
 
-/* ── ALERT BANNER SCADUTI ────────────────────────────────── */
-.alert-banner {
-  display: flex; align-items: flex-start; gap: 10px;
-  background: #FEF3F2; border: 1px solid #FCA5A5;
-  border-left: 3px solid var(--danger);
-  border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
-  color: var(--danger); cursor: pointer;
-  transition: background 0.15s;
-}
-.alert-banner:hover { background: #FDE8E6; }
-
-.alert-scaduto {
-  display: flex; align-items: flex-start; gap: 8px;
-  background: #FEF3F2; border: 1px solid #FCA5A5;
-  border-left: 3px solid var(--danger);
-  border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
-  color: var(--danger); font-size: 12px;
-}
-
-/* ── RIGA SCADUTA IN TABELLA ─────────────────────────────── */
-tbody tr.row-scaduto { background: #FFFBFA; }
-tbody tr.row-scaduto:hover { background: #FEF3F2; }
-tbody tr.row-scaduto.selected { background: var(--accent-light); }
-
-/* ── COLONNA OPERATORE ───────────────────────────────────── */
-.td-operatore {
-  font-size: 11px; font-weight: 600;
-  color: var(--accent); letter-spacing: 0.02em;
-}
-
-/* ── FORM DDT ────────────────────────────────────────────── */
-.ddt-form {
-  background: var(--accent-light); border: 1px solid #C5DDD9;
-  border-radius: 8px; padding: 14px; margin-top: 16px;
-}
-.ddt-title {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; font-weight: 600; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  margin-bottom: 12px;
-}
-.ddt-form .form-group { margin-bottom: 10px; }
-.ddt-form input { background: var(--surface); }
-/* MULTISELECT ATTIVITA */
+/* ── MULTISELECT ATTIVITÀ ────────────────────────────────── */
 .ms-wrap { position: relative; display: inline-block; }
 
 .ms-trigger {
@@ -562,7 +505,7 @@ tbody tr.row-scaduto.selected { background: var(--accent-light); }
   color: var(--text-secondary);
   background: var(--surface);
   border: 1px solid var(--border); border-radius: 6px;
-  cursor: pointer;
+  cursor: pointer; transition: border-color .15s, background .15s;
 }
 .ms-trigger:hover { border-color: var(--accent-mid); }
 .ms-trigger.open { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(44,110,106,.10); }
@@ -571,7 +514,7 @@ tbody tr.row-scaduto.selected { background: var(--accent-light); }
   color: var(--accent); font-weight: 500;
 }
 .ms-trigger-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ms-caret { flex-shrink: 0; opacity: .55; }
+.ms-caret { flex-shrink: 0; opacity: .55; transition: transform .15s; }
 .ms-trigger.open .ms-caret { transform: rotate(180deg); }
 
 .ms-menu {
@@ -581,6 +524,11 @@ tbody tr.row-scaduto.selected { background: var(--accent-light); }
   border: 1px solid var(--border); border-radius: 8px;
   box-shadow: 0 10px 30px rgba(26,25,23,.12);
   padding: 5px;
+  animation: msIn .12s ease-out;
+}
+@keyframes msIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .ms-option {
@@ -603,7 +551,7 @@ tbody tr.row-scaduto.selected { background: var(--accent-light); }
   width: 16px; height: 16px; flex-shrink: 0;
   border: 1.5px solid var(--border); border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--surface);
+  background: var(--surface); transition: all .12s;
 }
 .ms-option:hover .ms-box { border-color: var(--accent-mid); }
 .ms-box.on { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -621,4 +569,5 @@ tbody tr.row-scaduto.selected { background: var(--accent-light); }
 .ms-action:hover:not(:disabled) { background: var(--bg); color: var(--accent); }
 .ms-action:disabled { opacity: .35; cursor: default; }
 
+/* allinea altezza select nativi al trigger */
 .filter-row .filter-select { height: 34px; padding: 0 10px; }
