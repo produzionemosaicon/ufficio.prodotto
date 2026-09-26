@@ -11,12 +11,13 @@ const TAGLIE_DISPLAY = {
 const TIPI_ARTICOLO = [
   { key: 'Suola',      icon: Footprints, sub: 'Numerata 34 → 46' },
   { key: 'Tacco',      icon: Footprints, sub: 'Tacco + Sottotacco' },
+  { key: 'Sottopiede', icon: Layers,     sub: 'Di montaggio' },
   { key: 'Forme',      icon: Box,        sub: 'Numerata (paia)' },
   { key: 'Pellame',    icon: Layers,     sub: 'MQ o ML' },
   { key: 'Accessorio', icon: Puzzle,     sub: 'N° pezzi' },
 ]
 
-const SPEDIZIONI = ['CAMION - BY TRUCK', 'CORRIERE GLS', 'CORRIERE DHL', 'CORRIERE BRT', 'FRANCO FABBRICA', 'RITIRO NOSTRO MEZZO']
+const SPEDIZIONI = ['CAMION - BY TRUCK', 'CORRIERE TNT', 'CORRIERE FEDEX', 'CORRIERE GLS', 'FRANCO FABBRICA', 'RITIRO NOSTRO MEZZO']
 const TERMINI    = ['PORTO FRANCO', 'PORTO ASSEGNATO', 'EX WORKS']
 const PAGAMENTI  = ['RIBA 60 GG. FM', 'RIBA 30 GG. FM', 'BONIFICO 30 GG', 'BONIFICO 60 GG', 'BONIFICO VISTA FATTURA']
 const BRANDS     = ['', 'MOMONI', 'CHANEL', 'HERMÈS', 'MIUMIU', 'DRIES VAN NOTEN', 'PROENZA', 'CHROME HEARTS', 'PIERRE HARDY']
