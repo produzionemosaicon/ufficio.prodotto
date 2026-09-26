@@ -44,11 +44,338 @@ function isScaduto(val) {
   return d < new Date()
 }
 
-/* ── MULTISELECT ATTIVITÀ ──────────────────────────────── */
 function MultiSelectAttivita({ selezionate, onChange, conteggi }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
     function onClickOutside(e) {
-      if (ref.current
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    function onEsc(e) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [])
+
+  function toggle(a) {
+    onChange(selezionate.includes(a)
+      ? selezionate.filter(x => x !== a)
+      : [...selezionate, a])
+  }
+
+  const etichetta =
+    selezionate.length === 0 ? 'Attività: tutte'
+    : selezionate.length === 1 ? `Attività: ${selezionate[0]}`
+    : `Attività: ${selezionate.length} selezionate`
+
+  return (
+    <div className="ms-wrap" ref={ref}>
+      <button
+        type="button"
+        className={`ms-trigger ${selezionate.length > 0 ? 'has-sel' : ''} ${open ? 'open' : ''}`}
+        onClick={() => setOpen(o => !o)}>
+        <span className="ms-trigger-label">{etichetta}</span>
+        <ChevronDown size={14} className="ms-caret" />
+      </button>
+
+      {open && (
+        <div className="ms-menu">
+          {ATTIVITA.map(a => {
+            const sel = selezionate.includes(a)
+            return (
+              <button key={a} type="button"
+                className={`ms-option ${sel ? 'sel' : ''}`}
+                onClick={() => toggle(a)}>
+                <span className={`ms-box ${sel ? 'on' : ''}`}>
+                  {sel && <Check size={11} strokeWidth={3.5} />}
+                </span>
+                <span className="ms-option-label">{a}</span>
+                <span className="ms-option-count">{conteggi[a] || 0}</span>
+              </button>
+            )
+          })}
+          <div className="ms-footer">
+            <button type="button" className="ms-action" onClick={() => onChange([...ATTIVITA])}>
+              Tutte
+            </button>
+            <button type="button" className="ms-action"
+              onClick={() => onChange([])} disabled={selezionate.length === 0}>
+              Azzera
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+export default function App() {
+  const [ordini, setOrdini] = useState([])
+  const [filtroStato, setFiltroStato] = useState('all')
+  const [filtroTipo, setFiltroTipo]   = useState('all')
+  const [filtroBrand, setFiltroBrand] = useState('all')
+  const [filtroFornitore, setFiltroFornitore] = useState('all')
+  const [filtroOperatore, setFiltroOperatore] = useState('all')
+  const [filtroAttivita, setFiltroAttivita]   = useState([])
+  const [soloScaduti, setSoloScaduti]         = useState(false)
+  const [search, setSearch]           = useState('')
+  const [selected, setSelected]       = useState(null)
+  const [showForm, setShowForm]       = useState(false)
+  const [editOrdine, setEditOrdine]   = useState(null)
+  const [sortCol, setSortCol]         = useState('createdAt')
+  const [sortDir, setSortDir]         = useState('desc')
+
+  useEffect(() => {
+    const unsub = subscribeOrdini(setOrdini)
+    return unsub
+  }, [])
+
+  const counts = useMemo(() => {
+    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Tacco: 0, Forme: 0, Pellame: 0, Accessorio: 0 }
+    ordini.forEach(o => {
+      if (c[o.stato] !== undefined) c[o.stato]++
+      if (c[o.tipoArticolo] !== undefined) c[o.tipoArticolo]++
+    })
+    return c
+  }, [ordini])
+
+  const brands = useMemo(() => {
+    const s = new Set()
+    ordini.forEach(o => { if (o.brand) s.add(o.brand) })
+    return Array.from(s).sort()
+  }, [ordini])
+
+  const fornitori = useMemo(() => {
+    const s = new Set()
+    ordini.forEach(o => { if (o.fornitore) s.add(o.fornitore) })
+    return Array.from(s).sort()
+  }, [ordini])
+
+  const operatori = useMemo(() => {
+    const s = new Set()
+    ordini.forEach(o => { if (o.ordinatoDa) s.add(o.ordinatoDa) })
+    return Array.from(s).sort()
+  }, [ordini])
+
+  const conteggiAttivita = useMemo(() => {
+    const c = {}
+    ordini.forEach(o => { if (o.tipoAttivita) c[o.tipoAttivita] = (c[o.tipoAttivita] || 0) + 1 })
+    return c
+  }, [ordini])
+
+  const ordiniScaduti = useMemo(() =>
+    ordini.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)), [ordini])
+
+  const filtered = useMemo(() => {
+    let list = [...ordini]
+    if (soloScaduti) list = list.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna))
+    if (filtroStato !== 'all') list = list.filter(o => o.stato === filtroStato)
+    if (filtroTipo  !== 'all') list = list.filter(o => o.tipoArticolo === filtroTipo)
+    if (filtroBrand !== 'all') list = list.filter(o => o.brand === filtroBrand)
+    if (filtroFornitore !== 'all') list = list.filter(o => o.fornitore === filtroFornitore)
+    if (filtroOperatore !== 'all') list = list.filter(o => o.ordinatoDa === filtroOperatore)
+    if (filtroAttivita.length > 0) list = list.filter(o => filtroAttivita.includes(o.tipoAttivita))
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(o =>
+        o.fornitore?.toLowerCase().includes(q) ||
+        o.articolo?.toLowerCase().includes(q)  ||
+        o.ordinatoDa?.toLowerCase().includes(q) ||
+        o.numeroOrdine?.toLowerCase().includes(q)
+      )
+    }
+    list.sort((a, b) => {
+      let av = a[sortCol], bv = b[sortCol]
+      if (av?.toDate) av = av.toDate()
+      if (bv?.toDate) bv = bv.toDate()
+      if (av < bv) return sortDir === 'asc' ? -1 : 1
+      if (av > bv) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return list
+  }, [ordini, soloScaduti, filtroStato, filtroTipo, filtroBrand, filtroFornitore, filtroOperatore, filtroAttivita, search, sortCol, sortDir])
+
+  function toggleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
+  function SortIcon({ col }) {
+    if (sortCol !== col) return null
+    return sortDir === 'asc' ? <ChevronUp size={11} /> : <ChevronDown size={11} />
+  }
+
+  function azzeraFiltri() {
+    setFiltroFornitore('all'); setFiltroBrand('all')
+    setFiltroOperatore('all'); setFiltroAttivita([])
+    setSoloScaduti(false)
+  }
+  const filtriAttivi = filtroFornitore !== 'all' || filtroBrand !== 'all'
+    || filtroOperatore !== 'all' || filtroAttivita.length > 0 || soloScaduti
+
+  function openEdit(o) { setEditOrdine(o); setShowForm(true) }
+  function closeForm()  { setShowForm(false); setEditOrdine(null) }
+
+  return (
+    <div className="app-shell">
+
+      <header className="header">
+        <div className="logo">
+          <div className="logo-icon"><List size={14} color="white" /></div>
+          <div>
+            <div className="logo-name">Campionario Ordini</div>
+            <div className="logo-sub">Mosaicon Group</div>
+          </div>
+        </div>
+        <div className="header-right"></div>
+      </header>
+
+      <aside className="sidebar">
+        <div className="nav-section-label">Stato</div>
+        {Object.entries(STATO_LABELS).map(([k, { label, icon: Icon }]) => (
+          <button key={k} className={`nav-item ${filtroStato === k ? 'active' : ''}`}
+            onClick={() => setFiltroStato(k)}>
+            <Icon size={14} />{label}
+            <span className="nav-count">{counts[k] ?? 0}</span>
+          </button>
+        ))}
+
+        <div className="nav-divider" />
+
+        <div className="nav-section-label">Tipo</div>
+        {Object.entries(TIPO_LABELS).map(([k, { label, icon: Icon }]) => (
+          <button key={k} className={`nav-item ${filtroTipo === k ? 'active' : ''}`}
+            onClick={() => setFiltroTipo(k)}>
+            <Icon size={14} />{label}
+            {k !== 'all' && <span className="nav-count">{counts[k] ?? 0}</span>}
+          </button>
+        ))}
+
+        <div className="nav-divider" />
+
+        <div className="sidebar-stats">
+          <div className="nav-section-label" style={{ padding: '0 0 8px' }}>Riepilogo</div>
+          <div className="stat-row">
+            <span className="stat-label">Totale ordini</span>
+            <span className="stat-val">{counts.all}</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-label">Da sollecitare</span>
+            <span className="stat-val" style={{ color: ordiniScaduti.length > 0 ? '#C0392B' : undefined }}>
+              {ordiniScaduti.length}
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      <main className={`main ${selected ? 'with-panel' : ''}`}>
+        <div className="toolbar">
+          <div className="page-title">
+            {STATO_LABELS[filtroStato]?.label}
+            <span className="count-badge">{filtered.length}</span>
+          </div>
+          <div className="search-box">
+            <Search size={13} color="var(--text-muted)" />
+            <input placeholder="Cerca fornitore, articolo, operatore…"
+              value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <button className="btn-primary" onClick={() => { setEditOrdine(null); setShowForm(true) }}>
+            <Plus size={13} /> Nuovo ordine
+          </button>
+        </div>
+
+        {ordiniScaduti.length > 0 && !soloScaduti && (
+          <div className="alert-banner" onClick={() => setSoloScaduti(true)}>
+            <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>
+                {ordiniScaduti.length} {ordiniScaduti.length === 1 ? 'ordine scaduto' : 'ordini scaduti'} da sollecitare
+              </strong>
+              <div style={{ fontSize: 11, marginTop: 2, opacity: 0.85 }}>
+                Data consegna superata e merce non ancora ricevuta — clicca per vederli
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="filter-row">
+          <MultiSelectAttivita selezionate={filtroAttivita} onChange={setFiltroAttivita} conteggi={conteggiAttivita} />
+          <select className="filter-select" value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}>
+            <option value="all">Fornitore: tutti</option>
+            {fornitori.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+          <select className="filter-select" value={filtroBrand} onChange={e => setFiltroBrand(e.target.value)}>
+            <option value="all">Cliente/Brand: tutti</option>
+            {brands.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <select className="filter-select" value={filtroOperatore} onChange={e => setFiltroOperatore(e.target.value)}>
+            <option value="all">Ordinato da: tutti</option>
+            {operatori.map(op => <option key={op} value={op}>{op}</option>)}
+          </select>
+          {soloScaduti && (
+            <span className="filter-chip-active">
+              <AlertTriangle size={11} /> Solo scaduti
+            </span>
+          )}
+          {filtriAttivi && (
+            <button className="btn-secondary" onClick={azzeraFiltri}>Azzera filtri</button>
+          )}
+        </div>
+
+        <div className="stats-row">
+          {[
+            { k: 'all',        label: 'Totale',     cls: ''        },
+            { k: 'da_inviare', label: 'Da inviare', cls: 'accent'  },
+            { k: 'inviato',    label: 'Inviati',    cls: 'orange'  },
+            { k: 'ricevuto',   label: 'Ricevuti',   cls: 'green'   },
+          ].map(({ k, label, cls }) => (
+            <div key={k} className={`stat-card ${filtroStato === k ? 'stat-active' : ''}`}
+              onClick={() => setFiltroStato(k)} style={{ cursor: 'pointer' }}>
+              <div className="stat-card-label">{label}</div>
+              <div className={`stat-card-val ${cls}`}>{counts[k] ?? 0}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="table-wrap">
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <List size={32} color="var(--text-muted)" />
+              <div>Nessun ordine trovato</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                {search || filtriAttivi ? 'Prova a cambiare i filtri' : 'Crea il primo ordine con il pulsante in alto'}
+              </div>
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th onClick={() => toggleSort('numeroOrdine')} className="sortable">
+                    N° Ordine <SortIcon col="numeroOrdine" />
+                  </th>
+                  <th onClick={() => toggleSort('ordinatoDa')} className="sortable">
+                    Ordinato da <SortIcon col="ordinatoDa" />
+                  </th>
+                  <th onClick={() => toggleSort('fornitore')} className="sortable">
+                    Fornitore <SortIcon col="fornitore" />
+                  </th>
+                  <th>Articolo</th>
+                  <th>Tipo</th>
+                  <th>Attività</th>
+                  <th onClick={() => toggleSort('quantita')} className="sortable">
+                    Qtà <SortIcon col="quantita" />
+                  </th>
+                  <th onClick={() => toggleSort('dataConsegna')} className="sortable">
+                    Consegna <SortIcon col="dataConsegna" />
+                  </th>
+                  <th onClick={() => toggleSort('stato')} className="sortable">
+                    Stato <SortIcon col="stato" />
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(o => {
+                  const scad = o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)
