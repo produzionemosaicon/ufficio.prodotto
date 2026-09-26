@@ -379,3 +379,44 @@ export default function App() {
               <tbody>
                 {filtered.map(o => {
                   const scad = o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)
+                  return (
+                    <tr key={o.id}
+                      className={`${selected?.id === o.id ? 'selected' : ''} ${scad ? 'row-scaduto' : ''}`}
+                      onClick={() => setSelected(selected?.id === o.id ? null : o)}>
+                      <td className="td-mono">{o.numeroOrdine}</td>
+                      <td className="td-operatore">{o.ordinatoDa || '—'}</td>
+                      <td><strong>{o.fornitore}</strong></td>
+                      <td>{o.articolo}</td>
+                      <td>
+                        <span className={`type-tag ${o.tipoArticolo === 'Suola' ? 'mat' : o.tipoArticolo === 'Pellame' ? 'comp' : 'acc'}`}>
+                          {o.tipoArticolo}
+                        </span>
+                      </td>
+                      <td className="td-secondary">{o.stagione} · {o.tipoAttivita || ''}</td>
+                      <td className="td-mono">{o.quantita} {o.unitaMisura}</td>
+                      <td className={`td-mono ${scad ? 'text-danger' : ''}`}>
+                        {scad && <AlertTriangle size={10} style={{ marginRight: 3, verticalAlign: -1 }} />}
+                        {fmt(o.dataConsegna)}
+                      </td>
+                      <td><StatusPill stato={o.stato} /></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </main>
+
+      {selected && (
+        <DettaglioPanel
+          ordine={ordini.find(o => o.id === selected.id) || selected}
+          onClose={() => setSelected(null)}
+          onEdit={o => openEdit(o)}
+        />
+      )}
+
+      {showForm && <OrdineForm ordine={editOrdine} onClose={closeForm} />}
+    </div>
+  )
+}
