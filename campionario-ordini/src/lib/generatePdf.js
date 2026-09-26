@@ -14,7 +14,7 @@ export const TAGLIE = [
   '40','40.5','41','41.5','42','42.5','43','43.5','44','44.5','45','45.5','46'
 ]
 
-export const NUMERATA_TIPI = ['Suola', 'Tacco', 'Forme']
+export const NUMERATA_TIPI = ['Suola', 'Tacco', 'Sottopiede', 'Forme']
 
 const TAGLIE_DISPLAY = {
   '34.5':'34½','35.5':'35½','36.5':'36½','37.5':'37½','38.5':'38½','39.5':'39½',
