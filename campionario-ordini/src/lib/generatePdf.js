@@ -77,7 +77,8 @@ export function generateOrdinePDF(o) {
   doc.setTextColor(...MUTED); doc.setFontSize(6)
   doc.text('SPETT.LE / FORNITORE', x2 + 4, y + 5)
   doc.setTextColor(...DARK); doc.setFontSize(11)
-  doc.text(o.fornitore || '—', x2 + 4, y + 13)
+  const fLines = doc.splitTextToSize(o.fornitore || '—', wFo - 8).slice(0, 3)
+  fLines.forEach((l, i) => doc.text(l, x2 + 4, y + 12 + i * 5))
 
   const x3 = x2 + wFo + gap
   doc.setFillColor(...ACCLT); doc.setDrawColor(...ACCENT); doc.setLineWidth(1)
@@ -118,12 +119,19 @@ export function generateOrdinePDF(o) {
 
     y += 8
     doc.setTextColor(...DARK); doc.setFontSize(10)
-    doc.text(r.articolo || '—', M, y)
+    const artLines = doc.splitTextToSize(r.articolo || '—', totW)
+    artLines.forEach(l => { doc.text(l, M, y); y += 5 })
+    y -= 5
+
     doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
     let dy = y + 4.5
-    if (r.colore)      { doc.text('Colore: ' + r.colore, M, dy); dy += 4 }
-    if (r.lavorazione) { doc.text('Lavorazione: ' + r.lavorazione, M, dy); dy += 4 }
-    if (r.modello)     { doc.text('Linea: ' + r.modello, M, dy); dy += 4 }
+    const sub = []
+    if (r.colore)      sub.push('Colore: ' + r.colore)
+    if (r.lavorazione) sub.push('Lavorazione: ' + r.lavorazione)
+    if (r.modello)     sub.push('Linea: ' + r.modello)
+    sub.forEach(s => {
+      doc.splitTextToSize(s, totW).forEach(l => { doc.text(l, M, dy); dy += 4 })
+    })
     y = dy + 3
 
     if (NUMERATA_TIPI.includes(r.tipoArticolo) && r.numerata) {
@@ -189,16 +197,13 @@ export function generateOrdinePDF(o) {
 
   // NOTE
   y += 17
-  if (y > 235) { doc.addPage(); y = 20 }
-  doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
-  doc.text("NOTE / ISTRUZIONI — CONDIZIONI D'ACQUISTO", M, y)
-  doc.setDrawColor(...ACCENT); doc.setLineWidth(0.6)
-  doc.line(M, y + 2, W - M, y + 2)
-  y += 6
 
   const noteLines = []
   if (o.note) {
-    o.note.split('\n').forEach(l => noteLines.push({ t: l, style: 'user' }))
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5)
+    o.note.split('\n').forEach(l => {
+      doc.splitTextToSize(l, totW - 10).forEach(x => noteLines.push({ t: x, style: 'user' }))
+    })
     noteLines.push({ t: '', style: 'normal' })
   }
   noteLines.push(
@@ -218,6 +223,16 @@ export function generateOrdinePDF(o) {
   )
 
   const noteBoxH = noteLines.length * 3.8 + 8
+
+  // il blocco note deve stare tutto nella pagina, sopra il footer
+  if (y + 8 + noteBoxH > H - 14) { doc.addPage(); y = 20 }
+
+  doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
+  doc.text("NOTE / ISTRUZIONI — CONDIZIONI D'ACQUISTO", M, y)
+  doc.setDrawColor(...ACCENT); doc.setLineWidth(0.6)
+  doc.line(M, y + 2, W - M, y + 2)
+  y += 6
+
   doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
   doc.roundedRect(M, y, totW, noteBoxH, 1.5, 1.5, 'FD')
   let ty = y + 6
