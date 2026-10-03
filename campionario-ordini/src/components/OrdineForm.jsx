@@ -13,7 +13,7 @@ const TIPI_ARTICOLO = [
   { key: 'Tacco',      icon: Footprints, sub: 'Tacco + Sottotacco' },
   { key: 'Sottopiede', icon: Layers,     sub: 'Di montaggio' },
   { key: 'Forme',      icon: Box,        sub: 'Numerata (paia)' },
-  { key: 'Pellame',    icon: Layers,     sub: 'MQ o ML' },
+  { key: 'Pellame',    icon: Layers,     sub: 'MQ, ML o PE' },
   { key: 'Accessorio', icon: Puzzle,     sub: 'N° pezzi' },
 ]
 
@@ -135,7 +135,7 @@ function RigaEditor({ riga, index, total, onChange, onRemove }) {
           <div className="form-group">
             <label>Unità di misura</label>
             <div className="radio-pills">
-              {['MQ', 'ML'].map(u => (
+              {['MQ', 'ML', 'PE'].map(u => (
                 <button key={u} type="button"
                   className={`radio-pill ${riga.unitaMisura === u ? 'active' : ''}`}
                   onClick={() => set('unitaMisura', u)}>
