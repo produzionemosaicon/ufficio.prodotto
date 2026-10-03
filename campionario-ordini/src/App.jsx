@@ -169,6 +169,12 @@ export default function App() {
     return c
   }, [ordini])
 
+  const destinazioni = useMemo(() => {
+    const s = new Set()
+    ordini.forEach(o => { if (o.destinazione) s.add(o.destinazione) })
+    return Array.from(s).sort()
+  }, [ordini])
+
   const ordiniScaduti = useMemo(() =>
     ordini.filter(o => o.stato !== 'ricevuto' && isScaduto(o.dataConsegna)), [ordini])
 
@@ -419,7 +425,7 @@ export default function App() {
         />
       )}
 
-      {showForm && <OrdineForm ordine={editOrdine} onClose={closeForm} />}
+      {showForm && <OrdineForm ordine={editOrdine} onClose={closeForm} destinazioni={destinazioni} />}
     </div>
   )
 }
