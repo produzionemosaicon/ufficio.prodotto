@@ -143,7 +143,7 @@ export function generateOrdinePDF(o) {
 
     y += 8
     doc.setTextColor(...DARK); doc.setFontSize(10)
-    const coloreInline = r.tipoArticolo === 'Pellame' && r.colore
+    const coloreInline = (r.tipoArticolo === 'Pellame' || r.tipoArticolo === 'Accessorio') && r.colore
     const titolo = coloreInline
       ? (r.articolo || '—') + '  —  COL. ' + r.colore
       : (r.articolo || '—')
