@@ -23,6 +23,7 @@ const PAGAMENTI  = ['RIBA 60 GG. FM', 'RIBA 30 GG. FM', 'BONIFICO 30 GG', 'BONIF
 const BRANDS     = ['', 'MOMONI', 'CHANEL', 'HERMÈS', 'MIUMIU', 'DRIES VAN NOTEN', 'PROENZA', 'CHROME HEARTS', 'PIERRE HARDY']
 const OPERATORI  = ['', 'MASSIMILIANO', 'MASSIMO', 'MATTEO', 'IRENE', 'ELENA', 'SALVATORE', 'MARTA']
 export const ATTIVITA = ['Campionario', 'Prototipia', 'Industrializzazione', 'Strutture']
+export const DEST_DEFAULT = 'MOSAICON SHOES SRL — Corso Novara 171, 27029 Vigevano PV'
 
 const emptyRiga = {
   tipoArticolo: 'Suola',
@@ -40,6 +41,7 @@ const emptyOrder = {
   tipoAttivita: 'Campionario',
   fornitore: '',
   brand: '',
+  destinazione: DEST_DEFAULT,
   spedizione: 'CAMION - BY TRUCK',
   termini: 'PORTO FRANCO',
   pagamento: 'RIBA 60 GG. FM',
@@ -156,7 +158,7 @@ function RigaEditor({ riga, index, total, onChange, onRemove }) {
   )
 }
 
-export default function OrdineForm({ ordine, onClose }) {
+export default function OrdineForm({ ordine, onClose, destinazioni = [] }) {
   const isEdit = !!ordine?.id
   const [form, setForm] = useState(isEdit ? {
     ...emptyOrder,
@@ -176,6 +178,17 @@ export default function OrdineForm({ ordine, onClose }) {
   const [nuovoOperatore, setNuovoOperatore] = useState(
     isEdit && ordine.ordinatoDa && !OPERATORI.includes(ordine.ordinatoDa)
   )
+  const listaDest = useMemo(() => {
+    const s = new Set([DEST_DEFAULT, ...destinazioni])
+    if (isEdit && ordine.destinazione) s.add(ordine.destinazione)
+    return Array.from(s)
+  }, [destinazioni, isEdit, ordine])
+  const [cambiaDest, setCambiaDest] = useState(
+    isEdit && !!ordine.destinazione && ordine.destinazione !== DEST_DEFAULT
+  )
+  const [nuovaDest, setNuovaDest] = useState(
+    isEdit && ordine.destinazione && !listaDest.includes(ordine.destinazione)
+  )
   // evita la chiusura accidentale quando si seleziona testo e si rilascia il mouse fuori dal campo
   const downOnOverlay = useRef(false)
 
@@ -194,6 +207,7 @@ export default function OrdineForm({ ordine, onClose }) {
   async function handleSave() {
     if (!form.ordinatoDa.trim()) { setError('Seleziona o inserisci chi sta ordinando'); return }
     if (!form.fornitore.trim()) { setError('Inserisci il fornitore'); return }
+    if (!form.destinazione.trim()) { setError('Indica la destinazione della merce'); return }
 
     for (let i = 0; i < form.righe.length; i++) {
       const r = form.righe[i]
@@ -315,10 +329,47 @@ export default function OrdineForm({ ordine, onClose }) {
             </div>
           </div>
 
-          <div className="form-section-title">Fornitore</div>
+          <div className="form-section-title">Fornitore e destinazione</div>
           <div className="form-group" style={{ maxWidth: 400 }}>
             <label>Nome fornitore *</label>
             <input value={form.fornitore} onChange={e => set('fornitore', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Destinazione merce — consegnare presso</label>
+
+            {!cambiaDest ? (
+              <div className="dest-fissa">
+                <span className="dest-testo">{form.destinazione}</span>
+                <button type="button" className="dest-link" onClick={() => setCambiaDest(true)}>
+                  Cambia destinazione
+                </button>
+              </div>
+            ) : (
+              <>
+                <select
+                  value={nuovaDest ? '__nuova__' : form.destinazione}
+                  onChange={e => {
+                    if (e.target.value === '__nuova__') { setNuovaDest(true); set('destinazione', '') }
+                    else { setNuovaDest(false); set('destinazione', e.target.value) }
+                  }}>
+                  {listaDest.map(d => <option key={d} value={d}>{d}</option>)}
+                  <option value="__nuova__">+ NUOVA DESTINAZIONE…</option>
+                </select>
+                {nuovaDest && (
+                  <input
+                    style={{ marginTop: 6 }}
+                    placeholder="Ragione sociale — via, CAP, citta, provincia"
+                    value={form.destinazione}
+                    onChange={e => set('destinazione', e.target.value.toUpperCase())}
+                    autoFocus
+                  />
+                )}
+                <button type="button" className="dest-link" style={{ marginTop: 6, alignSelf: 'flex-start' }}
+                  onClick={() => { setCambiaDest(false); setNuovaDest(false); set('destinazione', DEST_DEFAULT) }}>
+                  Ripristina Mosaicon
+                </button>
+              </>
+            )}
           </div>
 
           <div className="form-section-title">
