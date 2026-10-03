@@ -88,8 +88,27 @@ export function generateOrdinePDF(o) {
   doc.setTextColor(...DARK); doc.setFontSize(22)
   doc.text(o.numeroOrdine, x3 + wOr / 2, y + 17, { align: 'center' })
 
+  // DESTINAZIONE MERCE
+  y += boxH + 5
+  const DEST_BASE = 'MOSAICON SHOES SRL'
+  const dest = o.destinazione || (DEST_BASE + ' — Corso Novara 171, 27029 Vigevano PV')
+  const destDiversa = !dest.toUpperCase().startsWith(DEST_BASE)
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10)
+  const dLines = doc.splitTextToSize(dest, totW - 12)
+  const destH = Math.max(13, dLines.length * 4.2 + 8)
+
+  if (destDiversa) { doc.setFillColor(255, 247, 237); doc.setDrawColor(180, 83, 9); doc.setLineWidth(0.8) }
+  else             { doc.setFillColor(...LIGHT);      doc.setDrawColor(...BORDER); doc.setLineWidth(0.3) }
+  doc.roundedRect(M, y, totW, destH, 1.5, 1.5, 'FD')
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(6)
+  doc.setTextColor(...(destDiversa ? [180, 83, 9] : MUTED))
+  doc.text(destDiversa ? 'DESTINAZIONE MERCE — CONSEGNARE PRESSO TERZI' : 'DESTINAZIONE MERCE — CONSEGNARE PRESSO', M + 5, y + 5)
+  doc.setTextColor(...DARK); doc.setFontSize(10)
+  dLines.forEach((l, i) => doc.text(l, M + 5, y + 10.5 + i * 4.2))
+
   // CONSEGNA RICHIESTA + REFERENTE
-  y += boxH + 7
+  y += destH + 5
   const wCons = totW * 0.42
   doc.setFillColor(...WHITE); doc.setDrawColor(...DARK); doc.setLineWidth(0.8)
   doc.roundedRect(M, y, wCons, 11, 1.5, 1.5, 'FD')
