@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
 import { X, Save, Footprints, Layers, Puzzle, Plus, Trash2, Box } from 'lucide-react'
 import { creaOrdine, aggiornaOrdine } from '../lib/ordini'
 import { TAGLIE, NUMERATA_TIPI } from '../lib/generatePdf'
@@ -176,6 +176,8 @@ export default function OrdineForm({ ordine, onClose }) {
   const [nuovoOperatore, setNuovoOperatore] = useState(
     isEdit && ordine.ordinatoDa && !OPERATORI.includes(ordine.ordinatoDa)
   )
+  // evita la chiusura accidentale quando si seleziona testo e si rilascia il mouse fuori dal campo
+  const downOnOverlay = useRef(false)
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
 
@@ -236,7 +238,13 @@ export default function OrdineForm({ ordine, onClose }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-overlay"
+      onMouseDown={e => { downOnOverlay.current = e.target === e.currentTarget }}
+      onMouseUp={e => {
+        if (downOnOverlay.current && e.target === e.currentTarget) onClose()
+        downOnOverlay.current = false
+      }}>
       <div className="modal modal-lg">
         <div className="modal-header">
           <div>
