@@ -32,6 +32,18 @@ function fmtDate(val) {
   return String(val)
 }
 
+// adatta il testo alla cella: riduce il corpo finche' ci sta, max 2 righe
+function fitText(doc, text, w, maxSize, minSize, maxLines) {
+  const t = String(text || '—')
+  for (let s = maxSize; s >= minSize; s -= 0.25) {
+    doc.setFontSize(s)
+    const lines = doc.splitTextToSize(t, w)
+    if (lines.length <= maxLines) return { lines, size: s }
+  }
+  doc.setFontSize(minSize)
+  return { lines: doc.splitTextToSize(t, w).slice(0, maxLines), size: minSize }
+}
+
 export function generateOrdinePDF(o) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, H = 297, M = 16
@@ -55,41 +67,52 @@ export function generateOrdinePDF(o) {
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13)
   doc.text('ORDINE FORNITORE', M, y)
 
-  // META: stagione | fornitore | numero ordine
+  // META: 6 celle in riga — linea | stagione | fornitore | consegna | referente | ordine
   y += 8
-  const boxH = 24, gap = 5
-  const wSt = (totW - 2 * gap) * 0.26
-  const wFo = (totW - 2 * gap) * 0.40
-  const wOr = (totW - 2 * gap) * 0.34
+  const boxH = 20, gap = 3
+  const base = totW - 5 * gap
+  const pesi = [0.160, 0.180, 0.205, 0.140, 0.148, 0.167]
+  const wC = pesi.map(p => base * p)
+  const xC = []
+  let cx = M
+  for (let i = 0; i < 6; i++) { xC.push(cx); cx += wC[i] + gap }
 
-  doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
-  doc.roundedRect(M, y, wSt, boxH, 2, 2, 'FD')
-  doc.setTextColor(...MUTED); doc.setFont('helvetica', 'bold'); doc.setFontSize(6)
-  doc.text('STAGIONE / ATTIVITÀ', M + 4, y + 5)
-  doc.setTextColor(...DARK); doc.setFontSize(11)
-  doc.text(o.stagione || '—', M + 4, y + 12)
-  doc.setTextColor(...ACCENT); doc.setFontSize(8.5)
-  doc.text((o.tipoAttivita || 'CAMPIONARIO').toUpperCase(), M + 4, y + 18)
+  function cella(i, etichetta, valore, maxSize, maxLines) {
+    const x = xC[i], w = wC[i]
+    doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
+    doc.roundedRect(x, y, w, boxH, 2, 2, 'FD')
+    doc.setTextColor(...MUTED); doc.setFont('helvetica', 'bold')
+    const fe = fitText(doc, etichetta, w - 6, 5, 3.6, 1)
+    doc.text(fe.lines[0], x + 3, y + 4.2)
+    doc.setTextColor(...DARK); doc.setFont('helvetica', 'bold')
+    const f = fitText(doc, valore, w - 6, maxSize, 5, maxLines)
+    const base0 = f.lines.length === 1 ? y + 11.5 : y + 9.8
+    f.lines.forEach((l, k) => doc.text(l, x + 3, base0 + k * 4))
+  }
 
-  const x2 = M + wSt + gap
-  doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
-  doc.roundedRect(x2, y, wFo, boxH, 2, 2, 'FD')
-  doc.setTextColor(...MUTED); doc.setFontSize(6)
-  doc.text('SPETT.LE / FORNITORE', x2 + 4, y + 5)
-  doc.setTextColor(...DARK); doc.setFontSize(11)
-  const fLines = doc.splitTextToSize(o.fornitore || '—', wFo - 8).slice(0, 3)
-  fLines.forEach((l, i) => doc.text(l, x2 + 4, y + 12 + i * 5))
+  cella(0, 'LINEA / CLIENTE', o.brand || '—', 8.5, 2)
+  cella(1, 'STAGIONE', o.stagione, 8, 2)
+  cella(2, 'SPETT.LE / FORNITORE', o.fornitore, 8.5, 2)
+  cella(3, 'CONSEGNA RICHIESTA', fmtDate(o.dataConsegna), 9.5, 1)
+  cella(4, 'REFERENTE ORDINE', o.ordinatoDa || '—', 8.5, 1)
 
-  const x3 = x2 + wFo + gap
-  doc.setFillColor(...ACCLT); doc.setDrawColor(...ACCENT); doc.setLineWidth(1)
-  doc.roundedRect(x3, y, wOr, boxH, 2, 2, 'FD')
-  doc.setTextColor(...ACCENT); doc.setFontSize(6.5)
-  doc.text('ORDINE DA INDICARE IN DDT', x3 + wOr / 2, y + 6, { align: 'center' })
-  doc.setTextColor(...DARK); doc.setFontSize(22)
-  doc.text(o.numeroOrdine, x3 + wOr / 2, y + 17, { align: 'center' })
+  // attivita' sotto la stagione
+  doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(6)
+  doc.text((o.tipoAttivita || 'CAMPIONARIO').toUpperCase(), xC[1] + 3, y + boxH - 2.3)
+
+  // cella ordine, in evidenza
+  const xOr = xC[5], wOr = wC[5]
+  doc.setFillColor(...ACCLT); doc.setDrawColor(...ACCENT); doc.setLineWidth(0.9)
+  doc.roundedRect(xOr, y, wOr, boxH, 2, 2, 'FD')
+  doc.setTextColor(...ACCENT); doc.setFont('helvetica', 'bold')
+  const fl = fitText(doc, 'ORDINE DA INDICARE IN DDT', wOr - 5, 5, 3.6, 1)
+  doc.text(fl.lines[0], xOr + wOr / 2, y + 4.2, { align: 'center' })
+  doc.setTextColor(...DARK)
+  const fo = fitText(doc, o.numeroOrdine, wOr - 6, 15, 9, 1)
+  doc.text(fo.lines[0], xOr + wOr / 2, y + boxH - 5.5, { align: 'center' })
 
   // DESTINAZIONE MERCE
-  y += boxH + 5
+  y += boxH + 4
   const DEST_BASE = 'MOSAICON SHOES SRL'
   const dest = o.destinazione || (DEST_BASE + ' — Corso Novara 171, 27029 Vigevano PV')
   const destDiversa = !dest.toUpperCase().startsWith(DEST_BASE)
@@ -107,27 +130,9 @@ export function generateOrdinePDF(o) {
   doc.setTextColor(...DARK); doc.setFontSize(10)
   dLines.forEach((l, i) => doc.text(l, M + 5, y + 10.5 + i * 4.2))
 
-  // CONSEGNA RICHIESTA + REFERENTE
-  y += destH + 5
-  const wCons = totW * 0.42
-  doc.setFillColor(...WHITE); doc.setDrawColor(...DARK); doc.setLineWidth(0.8)
-  doc.roundedRect(M, y, wCons, 11, 1.5, 1.5, 'FD')
-  doc.setTextColor(...MUTED); doc.setFontSize(6)
-  doc.text('DATA CONSEGNA RICHIESTA', M + 5, y + 4.5)
-  doc.setTextColor(...DARK); doc.setFontSize(13)
-  doc.text(fmtDate(o.dataConsegna), M + 5, y + 9.5)
-
-  const xRef = M + wCons + 5
-  const wRef = totW - wCons - 5
-  doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
-  doc.roundedRect(xRef, y, wRef, 11, 1.5, 1.5, 'FD')
-  doc.setTextColor(...MUTED); doc.setFontSize(6)
-  doc.text('REFERENTE ORDINE', xRef + 5, y + 4.5)
-  doc.setTextColor(...DARK); doc.setFontSize(11)
-  doc.text(o.ordinatoDa || '—', xRef + 5, y + 9.5)
+  y += destH + 7
 
   // RIGHE ARTICOLO
-  y += 18
   righe.forEach((r, idx) => {
     if (y > 210) { doc.addPage(); y = 20 }
 
@@ -138,14 +143,18 @@ export function generateOrdinePDF(o) {
 
     y += 8
     doc.setTextColor(...DARK); doc.setFontSize(10)
-    const artLines = doc.splitTextToSize(r.articolo || '—', totW)
+    const coloreInline = r.tipoArticolo === 'Pellame' && r.colore
+    const titolo = coloreInline
+      ? (r.articolo || '—') + '  —  COL. ' + r.colore
+      : (r.articolo || '—')
+    const artLines = doc.splitTextToSize(titolo, totW)
     artLines.forEach(l => { doc.text(l, M, y); y += 5 })
     y -= 5
 
     doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
     let dy = y + 4.5
     const sub = []
-    if (r.colore)      sub.push('Colore: ' + r.colore)
+    if (r.colore && !coloreInline) sub.push('Colore: ' + r.colore)
     if (r.lavorazione) sub.push('Lavorazione: ' + r.lavorazione)
     if (r.modello)     sub.push('Linea: ' + r.modello)
     sub.forEach(s => {
@@ -226,22 +235,15 @@ export function generateOrdinePDF(o) {
     noteLines.push({ t: '', style: 'normal' })
   }
   noteLines.push(
-    { t: 'Spedizione tramite corriere TNT o FedEx con account Mosaicon Shoes,', style: 'normal' },
-    { t: 'per info contattare il sig. Luca Orlandi', style: 'normal' },
-    { t: '', style: 'normal' },
-    { t: 'La Mosaicon Shoes SRL, opera in Esenzione Iva in quanto', style: 'normal' },
-    { t: 'esportatore abituale DPR633/1972 Art.8 Comma 1 lett. a', style: 'normal' },
-    { t: 'si invitano i fornitori a richiedere la dichiarazione di intento', style: 'normal' },
-    { t: "INDICARE SEMPRE IL NOSTRO NUMERO D'ORDINE", style: 'bold' },
-    { t: 'INDICARE SEMPRE I NOSTRI CODICI ARTICOLO', style: 'bold' },
-    { t: '', style: 'normal' },
-    { t: "Informativa di sintesi: ai sensi dell'art.13 D.Lgs.196/2003, informiamo che i Vs. dati sono inseriti in banche dati sia", style: 'small' },
-    { t: 'elettroniche che cartacee, e sono trattati dagli incaricati solo per finalità amministrative e contabili. I dati potranno', style: 'small' },
-    { t: 'essere comunicati a terzi per dar corso ai rapporti in essere o per obblighi di legge, ma non saranno diffusi.', style: 'small' },
-    { t: 'Ai sensi degli artt. 7-8-9 del medesimo D.Lgs. 196/2003, in ogni momento potrà essere richiesto accesso ai dati.', style: 'small' },
+    { t: 'Spedizione tramite corriere TNT o FedEx con account Mosaicon Shoes, per info contattare il sig. Luca Orlandi', style: 'normal' },
+    { t: 'Mosaicon Shoes SRL opera in Esenzione Iva in quanto esportatore abituale DPR633/1972 Art.8 Comma 1 lett. a — si invitano i fornitori a richiedere la dichiarazione di intento', style: 'esenz' },
+    { t: "INDICARE SEMPRE IL NOSTRO NUMERO D'ORDINE E I NOSTRI CODICI ARTICOLO", style: 'bold' },
+    { t: "Informativa di sintesi: ai sensi dell'art.13 D.Lgs.196/2003, informiamo che i Vs. dati sono inseriti in banche dati sia elettroniche che cartacee, e sono trattati dagli", style: 'small' },
+    { t: 'incaricati solo per finalità amministrative e contabili. I dati potranno essere comunicati a terzi per obblighi di legge, ma non saranno diffusi.', style: 'small' },
   )
 
-  const noteBoxH = noteLines.length * 3.8 + 8
+  const SPAZIO = { user: 5.2, normal: 4.0, esenz: 4.2, bold: 4.6, small: 3.2 }
+  const noteBoxH = noteLines.reduce((s, n) => s + (SPAZIO[n.style] || 4), 0) + 7
 
   // il blocco note deve stare tutto nella pagina, sopra il footer
   if (y + 8 + noteBoxH > H - 14) { doc.addPage(); y = 20 }
@@ -254,14 +256,15 @@ export function generateOrdinePDF(o) {
 
   doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER); doc.setLineWidth(0.3)
   doc.roundedRect(M, y, totW, noteBoxH, 1.5, 1.5, 'FD')
-  let ty = y + 6
+  let ty = y + 5.5
   noteLines.forEach(({ t, style }) => {
     if (style === 'bold') { doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...DARK) }
-    else if (style === 'small') { doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...MUTED) }
+    else if (style === 'small') { doc.setFont('helvetica', 'normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED) }
+    else if (style === 'esenz') { doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...DARK) }
     else if (style === 'user') { doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...ACCENT) }
     else { doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...DARK) }
     if (t) doc.text(t, M + 4, ty)
-    ty += 3.8
+    ty += SPAZIO[style] || 4
   })
 
   doc.setFillColor(...ACCENT)
