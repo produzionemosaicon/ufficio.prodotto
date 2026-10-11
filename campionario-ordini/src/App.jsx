@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react'
 import {
   List, Clock, Send, CheckCircle, Package, Layers, Box,
-  Plus, Search, ChevronUp, ChevronDown, AlertTriangle, Check
+  Plus, Search, ChevronUp, ChevronDown, AlertTriangle, Check, PackageCheck
 } from 'lucide-react'
 import { subscribeOrdini } from './lib/ordini'
 import StatusPill from './components/StatusPill'
@@ -13,6 +13,7 @@ const STATO_LABELS = {
   all:        { label: 'Tutti gli ordini', icon: List },
   da_inviare: { label: 'Da inviare',       icon: Clock },
   inviato:    { label: 'Inviati',           icon: Send },
+  parziale:   { label: 'Parziali',          icon: PackageCheck },
   ricevuto:   { label: 'Ricevuti',          icon: CheckCircle },
 }
 const TIPO_LABELS = {
@@ -137,7 +138,7 @@ export default function App() {
   }, [])
 
   const counts = useMemo(() => {
-    const c = { all: ordini.length, da_inviare: 0, inviato: 0, ricevuto: 0, Suola: 0, Tacco: 0, Sottopiede: 0, Forme: 0, Pellame: 0, Accessorio: 0 }
+    const c = { all: ordini.length, da_inviare: 0, inviato: 0, parziale: 0, ricevuto: 0, Suola: 0, Tacco: 0, Sottopiede: 0, Forme: 0, Pellame: 0, Accessorio: 0 }
     ordini.forEach(o => {
       if (c[o.stato] !== undefined) c[o.stato]++
       if (c[o.tipoArticolo] !== undefined) c[o.tipoArticolo]++
@@ -339,6 +340,7 @@ export default function App() {
             { k: 'all',        label: 'Totale',     cls: ''        },
             { k: 'da_inviare', label: 'Da inviare', cls: 'accent'  },
             { k: 'inviato',    label: 'Inviati',    cls: 'orange'  },
+            { k: 'parziale',   label: 'Parziali',   cls: 'purple'  },
             { k: 'ricevuto',   label: 'Ricevuti',   cls: 'green'   },
           ].map(({ k, label, cls }) => (
             <div key={k} className={`stat-card ${filtroStato === k ? 'stat-active' : ''}`}

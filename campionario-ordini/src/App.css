@@ -167,7 +167,7 @@
 
 /* ── STAT CARDS ──────────────────────────────────────────── */
 .stats-row {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 12px; margin-bottom: 16px;
 }
 .stat-card {
@@ -644,3 +644,74 @@ tbody tr.row-scaduto.selected { background: var(--accent-light); }
 }
 .ddt-form .form-group { margin-bottom: 10px; }
 .ddt-form input { background: var(--surface); }
+
+/* ── STATO PARZIALE ──────────────────────────────────────── */
+.pill-partial { background: #F3EEFF; color: #5B3FBF; }
+.pill-partial .dot { background: #5B3FBF; }
+.stat-card-val.purple { color: #5B3FBF; }
+
+.parziale-nota {
+  margin-top: 8px; padding: 7px 10px;
+  background: #F3EEFF; border: 1px solid #DDD2FA;
+  border-radius: 6px; font-size: 11.5px; color: #5B3FBF; font-weight: 500;
+}
+
+/* ── RIGHE: STATO DI RICEZIONE ───────────────────────────── */
+.panel-section-title.riga-titolo {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.riga-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 2px 7px; border-radius: 20px; text-transform: uppercase;
+}
+.riga-badge.ok     { background: var(--status-received-bg); color: var(--status-received-text); }
+.riga-badge.attesa { background: var(--border); color: var(--text-secondary); }
+
+.riga-ddt {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 8px; padding: 7px 10px;
+  background: var(--status-received-bg); border: 1px solid #BBE5CE;
+  border-radius: 6px;
+}
+.riga-ddt-dati {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  font-size: 11px; color: var(--status-received-text);
+}
+.riga-ddt-dati strong { font-family: 'DM Mono', monospace; font-weight: 500; }
+.riga-undo {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: transparent; border: none; padding: 0;
+  font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 500;
+  color: var(--text-muted); cursor: pointer; white-space: nowrap;
+}
+.riga-undo:hover:not(:disabled) { color: var(--danger); }
+.riga-undo:disabled { opacity: .4; cursor: default; }
+
+/* ── FORM RICEZIONE: SELEZIONE RIGHE ─────────────────────── */
+.ddt-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+}
+.ddt-righe { display: flex; flex-direction: column; gap: 5px; }
+.ddt-riga {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; padding: 8px 10px; text-align: left;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 11.5px; color: var(--text-primary);
+  transition: border-color .12s, background .12s;
+}
+.ddt-riga:hover { border-color: var(--accent-mid); }
+.ddt-riga.sel { border-color: var(--accent); background: var(--accent-light); }
+.ddt-check {
+  width: 16px; height: 16px; flex-shrink: 0;
+  border: 1.5px solid var(--border); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); color: #fff;
+}
+.ddt-check.on { background: var(--accent); border-color: var(--accent); }
+.ddt-riga-testo {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ddt-riga.sel .ddt-riga-testo { color: var(--accent); }

@@ -3,6 +3,7 @@ import React from 'react'
 const CONFIG = {
   da_inviare: { label: 'Da inviare', cls: 'pill-pending' },
   inviato:    { label: 'Inviato',    cls: 'pill-sent'    },
+  parziale:   { label: 'Parziale',   cls: 'pill-partial' },
   ricevuto:   { label: 'Ricevuto',   cls: 'pill-received'},
 }
 
